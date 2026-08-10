@@ -325,9 +325,9 @@
   <div id="ui">
     <p class="demo-t">箱から渡された <code>effectTier</code> で<br>昇格の止まる位置が変わります</p>
     <div class="demo-btns">
-      <button class="demo" data-tier="gold"><b>gold</b><small>金どまり／9.3秒</small></button>
-      <button class="demo" data-tier="green"><b>green</b><small>緑へ昇格／9.9秒</small></button>
-      <button class="demo" data-tier="rainbow"><b>rainbow</b><small>虹確定／10.2秒</small></button>
+      <button class="demo" data-tier="miss"><b>miss</b><small>切れない／9.3秒</small></button>
+      <button class="demo" data-tier="hit"><b>hit</b><small>切れる／9.9秒</small></button>
+      <button class="demo" data-tier="big"><b>big</b><small>LASTで切れる／10.2秒</small></button>
     </div>
     <p class="hint">音が出ます。再生中は Esc で <code>skip()</code>。<br>
       光の点滅が苦手な方はOS側の「視差を減らす」をオンにすると弱まります。</p>
@@ -618,11 +618,11 @@
     zoom: 4700,  black: 5100,  burst: 6300
   };
   const TIMELINES = {
-    gold:    { ...BASE, green: NEVER, logo: NEVER, reveal: 7200, end: 9300  },
-    green:   { ...BASE, green: 7000,  logo: NEVER, reveal: 7800, end: 9900  },
-    rainbow: { ...BASE, green: 7000,  logo: 7500,  reveal: 8100, end: 10200 }
+    miss: { ...BASE, green: NEVER, logo: NEVER, reveal: 7200, end: 9300  },
+    hit:  { ...BASE, green: 7000,  logo: NEVER, reveal: 7800, end: 9900  },
+    big:  { ...BASE, green: 7000,  logo: 7500,  reveal: 8100, end: 10200 }
   };
-  let T = TIMELINES.rainbow;
+  let T = TIMELINES.big;
 
   const flyCards = [];
   function buildDeck(){
@@ -778,9 +778,10 @@
       shake = 3.5 * (1 - p * 0.6);
 
       shout.style.opacity = "1";
-      if (PH === 0)      { shoutT.textContent = "激アツ"; shoutT.style.color = "#FFD24A"; }
-      else if (PH === 1) { shoutT.textContent = "昇格！"; shoutT.style.color = "#38FF86"; }
-      else               { shoutT.textContent = "虹 確 定"; shoutT.style.color = "#fff"; }
+      // 文言は tier の意味に合わせる（miss=切れない / hit=切れる / big=LASTで切れる）
+      if (PH === 0)      { shoutT.textContent = "殘念";      shoutT.style.color = "#FFD24A"; }
+      else if (PH === 1) { shoutT.textContent = "命中！";    shoutT.style.color = "#38FF86"; }
+      else               { shoutT.textContent = "LAST 命中"; shoutT.style.color = "#fff"; }
       const sp = t < T.green ? seg(t, T.burst, T.burst + 200)
                : t < T.logo  ? seg(t, T.green, T.green + 180)
                              : seg(t, T.logo, T.logo + 180);
@@ -886,7 +887,7 @@
     // フル演出で見せる1件は箱が topSeq で指定する。演出側でソートして選ばない
     const hero = results.find(r => r.seq === draw.topSeq) || results[0] || {};
     const first = hero;
-    T = TIMELINES[draw.effectTier || first.effectTier] || TIMELINES.rainbow;
+    T = TIMELINES[draw.effectTier || first.effectTier] || TIMELINES.big;
 
     const rankEl = prizecard.querySelector(".rank");
     const nameEl = prizecard.querySelector(".name");
@@ -942,9 +943,9 @@
 
   /* ── ここから下はデモ用。箱に組み込むときは消してよい ───────── */
   const HERO = {
-    gold:    { rank:"B", name:"皮卡丘 V",      effectTier:"gold",    isGuaranteed:true  },
-    green:   { rank:"A", name:"噴火龍 ex",     effectTier:"green",   isGuaranteed:false },
-    rainbow: { rank:"S", name:"噴火龍 ex SAR", effectTier:"rainbow", isGuaranteed:false }
+    miss: { rank:"D", name:"一般卡",        effectTier:"miss", isGuaranteed:true  },
+    hit:  { rank:"A", name:"噴火龍 ex",     effectTier:"hit",  isGuaranteed:false },
+    big:  { rank:"S", name:"噴火龍 ex SAR", effectTier:"big",  isGuaranteed:false }
   };
   const FILLER = ["D","D","C","C","C","B","D","C","B","D"];
 
@@ -958,7 +959,7 @@
       const seq = i + 1;
       if (seq === heroSeq) return { seq, ...HERO[tier] };
       const rank = FILLER[i % FILLER.length];
-      return { seq, rank, name: `カード ${seq}`, effectTier: "gold", isGuaranteed: false };
+      return { seq, rank, name: `カード ${seq}`, effectTier: "miss", isGuaranteed: false };
     });
     return {
       drawId: "demo", count, effectTier: tier, topSeq: heroSeq, results,
@@ -966,7 +967,7 @@
     };
   }
 
-  let lastTier = "rainbow", lastCount = 1;
+  let lastTier = "big", lastCount = 1;
   async function run(tier, count){
     lastTier = tier; lastCount = count;
     ui.classList.add("hidden");
@@ -1002,7 +1003,8 @@
     ]}
   };
   const RANK_ORDER = { S:5, A:4, B:3, C:2, D:1 };
-  const tierOf = rank => rank === "S" ? "rainbow" : rank === "A" ? "green" : "gold";
+  // rank → tier の対応は箱が持つ。演出側に判定を置かない
+  const tierOf = rank => rank === "S" ? "big" : (rank === "A" || rank === "B") ? "hit" : "miss";
 
   /* 抽選はサーバーの責務。ここはその模擬。
      クライアントで確定させると転蛋法が要求する確率の証明ができなくなるので、
@@ -1039,7 +1041,7 @@
     location.href = out.next === "holdings" ? "./cards.html" : "./c2.html";
   }
 
-  // ?tier=gold|green|rainbow を足すと、その段で自動再生する（確認用）
+  // ?tier=miss|hit|big を足すと、その段で自動再生する（確認用）
   const TIER = Q.get("tier");
   const GACHA_ID = Q.get("gacha");
   if (GACHA_ID) {
@@ -1047,7 +1049,7 @@
     ui.classList.add("hidden");
     runBox(GACHA_ID, Math.max(1, Number(Q.get("count") || 1)));
   } else if (SEEK !== null || Q.has("auto") || HOLD !== null || TIER) {
-    const tier = (TIER && HERO[TIER]) ? TIER : "rainbow";
+    const tier = (TIER && HERO[TIER]) ? TIER : "big";
     const n = Number(Q.get("count") || 1);
     ui.classList.add("hidden");
     play(makeDraw(tier, n > 0 ? n : 1));
