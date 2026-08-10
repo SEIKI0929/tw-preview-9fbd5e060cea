@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理畫面 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* 管理画面（H1 卡包管理 / H3 抽選ログ監査 / H4 出貨管理）。
+     表示言語は日本語。利用者が表側（台湾の一般利用者・繁体字）と違い、
+     運営＝平田側だから。台湾でスタッフを雇う段階で繁体字化する。
+
+     業務ツールなので単一テーマにコミットする（ライト固定）。
+     配色は表側の赤をアクセントに残しつつ、地は作業に耐える低彩度にした。 */
+  :root{
+    --bg:#F4F2EF;          /* わずかに温かいグレー。純グレーは疲れる */
+    --panel:#FFFFFF;
+    --ink:#1E1B18;
+    --sub:#6E675F;
+    --line:#E2DDD6;
+    --line2:#EFEBE5;
+    --red:#D4143C;         /* 表側と同じ系統 */
+    --red-bg:#FDF0F3;
+    --green:#1B7A4C;
+    --green-bg:#EAF6EF;
+    --amber:#9A6200;
+    --amber-bg:#FFF6E6;
+    --blue:#1A5FBF;
+    --blue-bg:#EDF3FC;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --jp:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; padding:0; height:100%}
+  body{background:var(--bg); color:var(--ink); font:400 14px/1.65 var(--jp);
+       -webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font-family:inherit}
+  button{cursor:pointer; border:none; background:none; color:inherit}
+  :focus-visible{outline:2px solid var(--blue); outline-offset:2px}
+
+  .wrap{display:grid; grid-template-columns:210px 1fr; min-height:100%}
+
+  /* サイドナビ */
+  .side{background:#231F1B; color:#E8E2D9; padding:16px 0; position:sticky; top:0; height:100dvh;
+        display:flex; flex-direction:column}
+  .side .brand{padding:0 16px 16px; display:flex; align-items:center; gap:8px;
+               border-bottom:1px solid #3A342D; margin-bottom:10px}
+  .side .brand svg{height:18px}
+  .side .brand span{font-size:11px; font-weight:700; color:#9C948A; letter-spacing:.06em}
+  .side nav{flex:1; overflow-y:auto}
+  .side .grp{padding:14px 16px 6px; font-size:10px; font-weight:700; color:#7C7268; letter-spacing:.08em}
+  .side a{display:flex; align-items:center; gap:9px; padding:9px 16px; font-size:13px;
+          font-weight:600; color:#D6CEC3; text-decoration:none; border-left:3px solid transparent}
+  .side a:hover{background:#2C2721}
+  .side a.on{background:#332D26; color:#fff; border-left-color:var(--red)}
+  .side a.off{color:#6E655B; cursor:default}
+  .side a.off:hover{background:none}
+  .side a .tag{margin-left:auto; font-size:9.5px; color:#6E655B; border:1px solid #4A433B;
+               border-radius:3px; padding:1px 5px}
+  .side .foot{padding:12px 16px 0; border-top:1px solid #3A342D; font-size:10.5px; color:#7C7268; line-height:1.7}
+
+  /* メイン */
+  .main{padding:20px 22px 60px; max-width:1180px}
+  .head{display:flex; align-items:flex-start; gap:14px; margin-bottom:6px}
+  .head h1{margin:0; font-size:20px; font-weight:800; letter-spacing:-.01em}
+  .head .desc{margin:4px 0 0; font-size:12.5px; color:var(--sub); line-height:1.7}
+  .head .act{margin-left:auto; display:flex; gap:8px; flex:0 0 auto}
+  .btn{font-size:13px; font-weight:700; border-radius:7px; padding:9px 15px; white-space:nowrap}
+  .btn.primary{background:var(--red); color:#fff}
+  .btn.ghost{background:var(--panel); color:var(--ink); border:1px solid var(--line)}
+  .btn:active{transform:translateY(1px)}
+
+  .view{display:none}
+  .view.on{display:block}
+
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; margin-top:16px;
+        overflow:hidden}
+  .card > h2{margin:0; padding:13px 16px; font-size:13.5px; font-weight:800;
+             border-bottom:1px solid var(--line2); display:flex; align-items:center; gap:9px}
+  .card > h2 .note{margin-left:auto; font-size:11px; font-weight:600; color:var(--sub)}
+  .pad{padding:16px}
+
+  /* 警告・注記 */
+  .callout{margin:14px 0 0; padding:12px 14px; border-radius:8px; font-size:12.5px; line-height:1.8;
+           border-left:3px solid}
+  .callout.warn{background:var(--amber-bg); border-color:var(--amber); color:#5F3E00}
+  .callout.info{background:var(--blue-bg); border-color:var(--blue); color:#123A73}
+  .callout.bad{background:var(--red-bg); border-color:var(--red); color:#8A0B26}
+  .callout b{font-weight:800}
+
+  /* テーブル */
+  .tw{overflow-x:auto}
+  table{border-collapse:collapse; width:100%; font-size:13px; min-width:640px}
+  th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line2); vertical-align:middle}
+  th{font-size:11px; font-weight:700; color:var(--sub); background:#FAF8F5; white-space:nowrap;
+     position:sticky; top:0; z-index:1}
+  td.n,th.n{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap}
+  td.mono{font-family:var(--mono); font-size:11.5px; color:var(--sub)}
+  tbody tr:hover{background:#FBFAF8}
+  tr:last-child td{border-bottom:none}
+
+  .pill{display:inline-block; font-size:10.5px; font-weight:700; border-radius:999px;
+        padding:3px 9px; white-space:nowrap}
+  .pill.ok{background:var(--green-bg); color:var(--green)}
+  .pill.warn{background:var(--amber-bg); color:var(--amber)}
+  .pill.bad{background:var(--red-bg); color:var(--red)}
+  .pill.mute{background:#F0EDE8; color:var(--sub)}
+  .pill.blue{background:var(--blue-bg); color:var(--blue)}
+
+  .rk{display:inline-flex; align-items:center; justify-content:center; min-width:22px;
+      font:800 10.5px/1 var(--mono); color:#fff; border-radius:4px; padding:4px 6px}
+  .rk.S{background:#B8860B} .rk.A{background:#6D1FB0} .rk.B{background:#1B5FD0}
+  .rk.C{background:#1E7A4D} .rk.D{background:#8A8178}
+
+  /* 確率エディタ */
+  .odds-row{display:grid; grid-template-columns:52px 1fr 108px 96px 40px; gap:10px;
+            align-items:center; padding:9px 0; border-bottom:1px solid var(--line2)}
+  .odds-row:last-of-type{border-bottom:none}
+  .odds-row input{width:100%; font-size:13px; border:1px solid var(--line); border-radius:6px;
+                  padding:8px 10px; background:#fff}
+  .odds-row input:focus{border-color:var(--blue); outline:none}
+  .odds-row input.num{text-align:right; font-variant-numeric:tabular-nums; font-family:var(--mono)}
+  .odds-row .del{color:var(--sub); font-size:16px; text-align:center}
+  .odds-head{display:grid; grid-template-columns:52px 1fr 108px 96px 40px; gap:10px;
+             font-size:11px; font-weight:700; color:var(--sub); padding-bottom:7px;
+             border-bottom:1px solid var(--line)}
+  .sum{display:flex; align-items:center; gap:10px; margin-top:14px; padding:12px 14px;
+       border-radius:8px; font-size:13.5px; font-weight:800}
+  .sum.ok{background:var(--green-bg); color:var(--green)}
+  .sum.bad{background:var(--red-bg); color:var(--red)}
+  .sum .v{margin-left:auto; font-family:var(--mono); font-size:16px}
+
+  /* 監査：実測と公開値の比較 */
+  .bars{display:grid; gap:9px}
+  .bar{display:grid; grid-template-columns:52px 1fr 150px; gap:12px; align-items:center}
+  .bar .track{position:relative; height:22px; background:#F0EDE8; border-radius:5px; overflow:hidden}
+  .bar .fill{position:absolute; left:0; top:0; bottom:0; background:#C8BFB3; border-radius:5px}
+  .bar .mark{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink)}
+  .bar .nums{font-family:var(--mono); font-size:11.5px; color:var(--sub); text-align:right;
+             font-variant-numeric:tabular-nums}
+  .bar .nums b{color:var(--ink)}
+  .bar .nums .dev{margin-left:6px; font-weight:700}
+  .dev.ok{color:var(--green)} .dev.warn{color:var(--amber)} .dev.bad{color:var(--red)}
+  .legend{margin-top:12px; font-size:11.5px; color:var(--sub); line-height:1.8}
+  .legend .k{display:inline-block; width:11px; height:11px; border-radius:2px; vertical-align:-1px;
+             margin-right:5px}
+
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:16px}
+  .kpi{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px}
+  .kpi .l{font-size:11px; font-weight:700; color:var(--sub)}
+  .kpi .v{margin-top:5px; font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.1}
+  .kpi .s{margin-top:4px; font-size:11px; color:var(--sub)}
+  .kpi.alert{border-color:var(--amber); background:var(--amber-bg)}
+  .kpi.alert .v{color:var(--amber)}
+
+  .filters{display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:12px 16px;
+           border-bottom:1px solid var(--line2); background:#FAF8F5}
+  .filters select, .filters input{font-size:12.5px; border:1px solid var(--line); border-radius:6px;
+                                  padding:7px 9px; background:#fff}
+  .filters .sp{margin-left:auto; font-size:11.5px; color:var(--sub)}
+
+  @media (max-width: 860px){
+    .wrap{grid-template-columns:1fr}
+    .side{position:static; height:auto; flex-direction:row; overflow-x:auto; padding:8px}
+    .side .brand, .side .grp, .side .foot{display:none}
+    .side nav{display:flex; gap:4px}
+    .side a{border-left:none; border-bottom:3px solid transparent; white-space:nowrap; border-radius:6px}
+    .side a.on{border-left:none; border-bottom-color:var(--red)}
+  }
+</style>
+
+<div class="wrap">
+  <aside class="side">
+    <div class="brand">
+      <svg viewBox="0 0 132 30" aria-label="DOPA"><text x="0" y="23"
+        style="font:italic 900 25px 'Arial Black',sans-serif; fill:#D4143C; letter-spacing:-1px;">DOPA</text>
+        <path d="M112 5 L124 5 L117 15 L124 15 L110 27 L114 17 L107 17 Z" fill="#E0A93C"/></svg>
+      <span>管理</span>
+    </div>
+    <nav id="nav">
+      <div class="grp">運用</div>
+      <a href="#" data-v="packs" class="on">卡包・確率設定</a>
+      <a href="#" data-v="audit">抽選ログ監査</a>
+      <a href="#" data-v="ship">出荷管理</a>
+      <div class="grp">未実装</div>
+      <a href="#" class="off">在庫管理<span class="tag">H2</span></a>
+      <a href="#" class="off">会員管理<span class="tag">H5</span></a>
+      <a href="#" class="off">売上・分析<span class="tag">H6</span></a>
+    </nav>
+    <div class="foot">
+      表示は日本語（運営用）。<br>台湾でスタッフを雇う段階で繁体字化する。
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- H1 卡包・確率設定 -->
+    <section class="view on" id="v-packs">
+      <div class="head">
+        <div>
+          <h1>卡包・確率設定</h1>
+          <p class="desc">確率を変更すると<b>新しい版が作られます</b>。進行中の抽選は旧版のまま完結します。</p>
+        </div>
+        <div class="act">
+          <button class="btn ghost" id="btnPreview">公開ページを確認</button>
+          <button class="btn primary" id="btnPublish">新しい版として公開</button>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <b>確率を上書きしないこと。</b>
+        既存の行を書き換えると「その抽選の時点で何%だったか」が消え、
+        転蛋法が要求する<b>「公開した確率どおりに抽選した」証明ができなくなります</b>。
+        保存は必ず新しい版として行われます。
+      </div>
+
+      <div class="card">
+        <h2>卡包一覧 <span class="note">クリックで編集</span></h2>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>卡包</th><th class="n">単価</th><th class="n">版</th>
+            <th>適用開始</th><th class="n">在庫</th><th>状態</th>
+          </tr></thead>
+          <tbody id="packList"></tbody>
+        </table></div>
+      </div>
+
+      <div class="card">
+        <h2>確率設定 <span class="note" id="editingName">—</span></h2>
+        <div class="pad">
+          <div class="odds-head">
+            <span>等級</span><span>賞品名</span><span>確率</span><span>在庫</span><span></span>
+          </div>
+          <div id="oddsRows"></div>
+          <div class="sum" id="oddsSum"><span>確率の合計</span><span class="v">—</span></div>
+          <div class="callout info" style="margin-top:14px">
+            <b>最低保証</b>は賭博罪の構成要件を外す根拠になります。必ず何らかの商品が手に入る形を維持してください。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- H3 抽選ログ監査 -->
+    <section class="view" id="v-audit">
+      <div class="head">
+        <div>
+          <h1>抽選ログ監査</h1>
+          <p class="desc">公開した確率どおりに抽選が行われているかを検証します。<b>争いになったときの唯一の根拠</b>です。</p>
+        </div>
+        <div class="act"><button class="btn ghost" id="btnExport">CSVで書き出し</button></div>
+      </div>
+
+      <div class="kpis" id="auditKpis"></div>
+
+      <div class="card">
+        <h2>公開確率と実測の比較 <span class="note" id="auditScope">—</span></h2>
+        <div class="pad">
+          <div class="bars" id="bars"></div>
+          <p class="legend">
+            <span class="k" style="background:#C8BFB3"></span>実測の出現率
+            <span class="k" style="background:#1E1B18; width:2px"></span>公開している確率<br>
+            乖離は試行回数が少ないほど大きく出ます。<b>件数と併せて見てください。</b>
+            統計的な有意差の判定は実装時に決めます（二項検定を想定）。
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>抽選ログ</h2>
+        <div class="filters">
+          <select id="fPack"></select>
+          <select id="fRank">
+            <option value="">全等級</option>
+            <option>S</option><option>A</option><option>B</option><option>C</option><option>D</option>
+          </select>
+          <span class="sp" id="logCount">—</span>
+        </div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>日時</th><th>会員</th><th>卡包</th><th class="n">版</th>
+            <th class="n">連数</th><th>結果</th><th>seed</th>
+          </tr></thead>
+          <tbody id="logs"></tbody>
+        </table></div>
+      </div>
+
+      <div class="callout info">
+        <b>seed を残す理由。</b>版の確率表と乱数の種があれば結果を再現して突き合わせられます。
+        「本当にその確率で引いたのか」に答えられる最後の手段です。
+      </div>
+    </section>
+
+    <!-- H4 出荷管理 -->
+    <section class="view" id="v-ship">
+      <div class="head">
+        <div>
+          <h1>出荷管理</h1>
+          <p class="desc">解除権の起算点は<b>「利用者が受け取った日」</b>です。発送日でも申請日でもありません。</p>
+        </div>
+      </div>
+
+      <div class="kpis" id="shipKpis"></div>
+
+      <div class="callout warn">
+        <b>受領日を配送業者の記録から取ること。</b>自己申告にすると起算点が動かせてしまいます。
+        受領日が未確定の間は<b>7日のカウントが始まりません</b>（最長4か月権利が残ります）。
+      </div>
+
+      <div class="card">
+        <h2>寄送申請</h2>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>申請日</th><th>会員</th><th class="n">枚数</th><th>宛先</th>
+            <th>状態</th><th>受領日</th><th>解除権</th>
+          </tr></thead>
+          <tbody id="ships"></tbody>
+        </table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("ja-JP");
+  const pct = p => (p * 100).toFixed(2) + "%";
+
+  /* ── 卡包（gacha_version 単位） ───────────────── */
+  const PACKS = [
+    { id:"g_1", name:"噴火龍 ex 決戰包", price:500, version:3, published:"2026-08-08",
+      stock:43, total:200, status:"公開中", guarantee:50, prizes:[
+        { rank:"S", name:"噴火龍 ex SAR", prob:0.0100, stock:2 },
+        { rank:"A", name:"噴火龍 ex SR",  prob:0.0400, stock:8 },
+        { rank:"B", name:"皮卡丘 V",      prob:0.1500, stock:30 },
+        { rank:"C", name:"稀有卡 隨機",   prob:0.3000, stock:60 },
+        { rank:"D", name:"一般卡 隨機",   prob:0.5000, stock:100 }]},
+    { id:"g_2", name:"海賊王 世界最強戰士", price:300, version:1, published:"2026-08-05",
+      stock:112, total:300, status:"公開中", guarantee:30, prizes:[
+        { rank:"S", name:"香克斯 SEC",  prob:0.0050, stock:1 },
+        { rank:"A", name:"魯夫 SR",     prob:0.0350, stock:9 },
+        { rank:"B", name:"索隆 R",      prob:0.1600, stock:48 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.3000, stock:90 },
+        { rank:"D", name:"一般卡 隨機", prob:0.5000, stock:152 }]},
+    { id:"g_3", name:"25 週年紀念收藏", price:1000, version:2, published:"2026-08-07",
+      stock:0, total:80, status:"完売", guarantee:100, prizes:[
+        { rank:"S", name:"紀念 SAR",    prob:0.0200, stock:0 },
+        { rank:"A", name:"紀念 SR",     prob:0.0800, stock:0 },
+        { rank:"B", name:"紀念 R",      prob:0.2000, stock:0 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.3000, stock:0 },
+        { rank:"D", name:"一般卡 隨機", prob:0.4000, stock:0 }]}
+  ];
+
+  let editing = PACKS[0];
+
+  function renderPackList(){
+    $("#packList").innerHTML = PACKS.map(p => `
+      <tr data-id="${p.id}" style="cursor:pointer">
+        <td><b>${esc(p.name)}</b></td>
+        <td class="n">${fmt(p.price)} PT</td>
+        <td class="n">v${p.version}</td>
+        <td class="mono">${p.published}</td>
+        <td class="n">${fmt(p.stock)} / ${fmt(p.total)}</td>
+        <td>${p.status === "公開中"
+              ? `<span class="pill ok">公開中</span>`
+              : `<span class="pill mute">完売</span>`}</td>
+      </tr>`).join("");
+  }
+
+  function renderOdds(){
+    $("#editingName").textContent = `${editing.name}（v${editing.version} を編集中）`;
+    $("#oddsRows").innerHTML = editing.prizes.map((z, i) => `
+      <div class="odds-row" data-i="${i}">
+        <span><span class="rk ${z.rank}">${z.rank}</span></span>
+        <input type="text" value="${esc(z.name)}" data-f="name">
+        <input type="text" class="num prob" value="${(z.prob * 100).toFixed(2)}" data-f="prob" inputmode="decimal">
+        <input type="text" class="num" value="${z.stock}" data-f="stock" inputmode="numeric">
+        <span class="del">×</span>
+      </div>`).join("");
+    checkSum();
+  }
+
+  /* 合計が100%でなければ公開させない。
+     黙って出すと「公開した確率」と実態がずれ、証明が崩れる */
+  function checkSum(){
+    const inputs = [...$("#oddsRows").querySelectorAll('[data-f="prob"]')];
+    const sum = inputs.reduce((a, el) => a + (parseFloat(el.value) || 0), 0);
+    const ok = Math.abs(sum - 100) < 1e-9;
+    const el = $("#oddsSum");
+    el.className = "sum " + (ok ? "ok" : "bad");
+    el.innerHTML = ok
+      ? `<span>確率の合計</span><span class="v">${sum.toFixed(2)}%</span>`
+      : `<span>確率の合計が 100% になっていません（公開できません）</span><span class="v">${sum.toFixed(2)}%</span>`;
+    $("#btnPublish").disabled = !ok;
+    $("#btnPublish").style.opacity = ok ? "1" : ".45";
+    $("#btnPublish").style.cursor = ok ? "pointer" : "not-allowed";
+  }
+
+  $("#packList").addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-id]"); if (!tr) return;
+    editing = PACKS.find(p => p.id === tr.dataset.id);
+    renderOdds();
+    $("#oddsRows").scrollIntoView({ behavior:"smooth", block:"center" });
+  });
+  $("#oddsRows").addEventListener("input", checkSum);
+  $("#btnPreview").addEventListener("click", () => window.open("./odds.html", "_blank"));
+  $("#btnPublish").addEventListener("click", () => {
+    if ($("#btnPublish").disabled) return;
+    alert(`v${editing.version + 1} として公開します。\n\n`
+      + `・gacha_version を新規作成し、確率表を凍結\n`
+      + `・進行中の抽選は v${editing.version} のまま完結\n`
+      + `・audit_log に変更前後を記録\n\n（原型では未接続）`);
+  });
+
+  /* ── H3 監査 ─────────────────────────────────
+     実測の出現率と公開確率を並べる。乖離が大きければ設定ミスか不具合。 */
+  const AUDIT = {
+    packId: "g_1", draws: 8412,
+    observed: { S: 0.0093, A: 0.0421, B: 0.1462, C: 0.3055, D: 0.4969 }
+  };
+
+  function renderAudit(){
+    const p = PACKS.find(x => x.id === AUDIT.packId);
+    $("#auditScope").textContent = `${p.name}（v${p.version}・直近 ${fmt(AUDIT.draws)} 回）`;
+
+    const maxProb = Math.max(...p.prizes.map(z => z.prob));
+    $("#bars").innerHTML = p.prizes.map(z => {
+      const obs = AUDIT.observed[z.rank] ?? 0;
+      const dev = z.prob ? (obs - z.prob) / z.prob : 0;      // 相対乖離
+      const cls = Math.abs(dev) < 0.10 ? "ok" : Math.abs(dev) < 0.25 ? "warn" : "bad";
+      const w = (obs / maxProb) * 100;
+      const markLeft = (z.prob / maxProb) * 100;
+      return `<div class="bar">
+        <span><span class="rk ${z.rank}">${z.rank}</span></span>
+        <span class="track">
+          <span class="fill" style="width:${Math.min(100, w).toFixed(2)}%"></span>
+          <span class="mark" style="left:${Math.min(100, markLeft).toFixed(2)}%"></span>
+        </span>
+        <span class="nums"><b>${pct(obs)}</b> / ${pct(z.prob)}
+          <span class="dev ${cls}">${dev >= 0 ? "+" : ""}${(dev * 100).toFixed(1)}%</span></span>
+      </div>`;
+    }).join("");
+
+    const worst = Math.max(...p.prizes.map(z => {
+      const obs = AUDIT.observed[z.rank] ?? 0;
+      return z.prob ? Math.abs((obs - z.prob) / z.prob) : 0;
+    }));
+    $("#auditKpis").innerHTML = [
+      { l:"監査対象の抽選", v:fmt(AUDIT.draws), s:"直近30日" },
+      { l:"最大の相対乖離", v:(worst * 100).toFixed(1) + "%", s:"公開確率との差", alert: worst >= 0.10 },
+      { l:"確率の版", v:"v" + p.version, s:p.published + " 起" },
+      { l:"未解決の申立", v:"0", s:"利用者からの照会" }
+    ].map(k => `<div class="kpi${k.alert ? " alert" : ""}">
+        <div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${k.s}</div></div>`).join("");
+  }
+
+  /* 抽選ログ */
+  const RANKS = ["S","A","B","C","D"];
+  const LOGS = Array.from({ length: 26 }, (_, i) => {
+    const p = PACKS[i % 2];
+    const rank = RANKS[i % 5 === 0 ? 0 : (i % 5)];
+    const cnt = [1, 10, 100][i % 3];
+    const hh = String(23 - (i % 20)).padStart(2, "0");
+    return { at:`08-11 ${hh}:${String((i * 7) % 60).padStart(2,"0")}`, user:`u_${(8000 + i * 37).toString(16)}`,
+             pack:p, ver:p.version, count:cnt, top:rank, seed:(0x5f2a + i * 977).toString(16).padStart(8,"0") };
+  });
+
+  function renderLogs(){
+    const fp = $("#fPack").value, fr = $("#fRank").value;
+    const rows = LOGS.filter(l => (!fp || l.pack.id === fp) && (!fr || l.top === fr));
+    $("#logCount").textContent = `${rows.length} 件 / 全 ${LOGS.length} 件`;
+    $("#logs").innerHTML = rows.map(l => `
+      <tr>
+        <td class="mono">${l.at}</td>
+        <td class="mono">${l.user}</td>
+        <td>${esc(l.pack.name)}</td>
+        <td class="n">v${l.ver}</td>
+        <td class="n">${l.count}</td>
+        <td><span class="rk ${l.top}">${l.top}</span></td>
+        <td class="mono">${l.seed}</td>
+      </tr>`).join("");
+  }
+  $("#fPack").innerHTML = `<option value="">全卡包</option>` +
+    PACKS.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  $("#fPack").addEventListener("change", renderLogs);
+  $("#fRank").addEventListener("change", renderLogs);
+  $("#btnExport").addEventListener("click", () => alert("CSV書き出し（原型では未接続）"));
+
+  /* ── H4 出荷 ─────────────────────────────────
+     解除権の残日数は「受領日 + 7日」。受領日が未確定なら計算しない。 */
+  const TODAY = new Date("2026-08-11T00:00:00");
+  const SHIPS = [
+    { at:"08-04", user:"u_1f41", n:12, to:"臺北市 中正區", st:"delivered",  deliv:"2026-08-06" },
+    { at:"08-06", user:"u_2a08", n:3,  to:"新北市 板橋區", st:"delivered",  deliv:"2026-08-09" },
+    { at:"08-08", user:"u_3c77", n:24, to:"臺中市 西屯區", st:"delivered",  deliv:"2026-08-10" },
+    { at:"08-09", user:"u_4b90", n:5,  to:"高雄市 左營區", st:"shipped",    deliv:null },
+    { at:"08-10", user:"u_5d12", n:8,  to:"桃園市 中壢區", st:"preparing",  deliv:null },
+    { at:"08-11", user:"u_6e55", n:1,  to:"臺南市 東區",   st:"requested",  deliv:null }
+  ];
+  const ST = { requested:["申請受付","mute"], preparing:["出荷準備","blue"],
+               shipped:["発送済","blue"], delivered:["受領済","ok"] };
+
+  function daysLeft(deliv){
+    if (!deliv) return null;
+    const end = new Date(deliv + "T00:00:00");
+    end.setDate(end.getDate() + 7);
+    return Math.ceil((end - TODAY) / 86400000);
+  }
+
+  function renderShips(){
+    $("#ships").innerHTML = SHIPS.map(s => {
+      const [label, cls] = ST[s.st];
+      const d = daysLeft(s.deliv);
+      let w;
+      if (d === null) w = `<span class="pill mute">起算前</span>`;
+      else if (d > 0)  w = `<span class="pill warn">残 ${d} 日</span>`;
+      else             w = `<span class="pill ok">期間満了</span>`;
+      return `<tr>
+        <td class="mono">${s.at}</td>
+        <td class="mono">${s.user}</td>
+        <td class="n">${s.n}</td>
+        <td>${esc(s.to)}</td>
+        <td><span class="pill ${cls}">${label}</span></td>
+        <td class="mono">${s.deliv || "—"}</td>
+        <td>${w}</td>
+      </tr>`;
+    }).join("");
+
+    const pend = SHIPS.filter(s => s.st !== "delivered").length;
+    const inWin = SHIPS.filter(s => { const d = daysLeft(s.deliv); return d !== null && d > 0; }).length;
+    const noDeliv = SHIPS.filter(s => s.st === "shipped" && !s.deliv).length;
+    $("#shipKpis").innerHTML = [
+      { l:"未出荷の申請", v:pend, s:"申請受付・準備・発送済" },
+      { l:"解除権の期間内", v:inWin, s:"受領から7日以内", alert: inWin > 0 },
+      { l:"受領日が未取得", v:noDeliv, s:"発送済だが未受領", alert: noDeliv > 0 },
+      { l:"今月の出荷枚数", v:fmt(SHIPS.reduce((a, s) => a + s.n, 0)), s:"累計" }
+    ].map(k => `<div class="kpi${k.alert ? " alert" : ""}">
+        <div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${k.s}</div></div>`).join("");
+  }
+
+  /* ── ナビ ───────────────────────────────── */
+  $("#nav").addEventListener("click", e => {
+    const a = e.target.closest("a"); if (!a) return;
+    e.preventDefault();
+    if (a.classList.contains("off")) return;
+    [...$("#nav").querySelectorAll("a")].forEach(x => x.classList.remove("on"));
+    a.classList.add("on");
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+    $("#v-" + a.dataset.v).classList.add("on");
+  });
+
+  renderPackList(); renderOdds(); renderAudit(); renderLogs(); renderShips();
+
+  // ?v=audit / ?v=ship で直接開く（共有と確認用）
+  const v0 = new URLSearchParams(location.search).get("v");
+  if (v0) {
+    const a = $(`#nav a[data-v="${v0}"]`);
+    if (a) a.click();
+  }
+})();
+</script>
+</body></html>
