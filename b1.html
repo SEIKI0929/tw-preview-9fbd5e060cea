@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>購買點數 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* B1 點數購入。3分割設計の①＝売上の発生点。
+     この画面の要は「解除権の事前告知と同意の記録」。
+     告知しないと7日のカウントが始まらず、最長4か月権利が残る。
+     同意ログ（文面の版とハッシュ）を残すのは箱の責任。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA; --card:#FFFFFF;
+    --coin:#F5B920; --green:#1E7A4D; --amber:#A85D00;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:var(--tc); color:var(--ink);
+    background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+    background-attachment:fixed; -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(128px + var(--safe)); position:relative}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{
+    position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 8px;
+    display:flex; align-items:center; gap:6px; box-shadow:0 1px 0 rgba(0,0,0,.08);
+  }
+  .hd .back{padding:10px; display:flex; color:var(--ink)}
+  .hd .ttl{font-size:15px; font-weight:800; flex:1}
+  .hd .bal{
+    display:flex; align-items:center; gap:4px; font-size:13px; font-weight:800;
+    font-variant-numeric:tabular-nums; background:#FBF6EA; border:1px solid #F0E4CB;
+    border-radius:999px; padding:5px 11px 5px 6px;
+  }
+  .coin{width:15px; height:15px; border-radius:50%; flex:0 0 auto;
+        background:radial-gradient(circle at 35% 30%,#FFE9A0,var(--coin) 60%,#C98A00)}
+
+  .sec{background:#fff; margin:10px; border-radius:12px; box-shadow:0 2px 8px rgba(120,60,0,.16); overflow:hidden}
+  .sec > h2{margin:0; padding:13px 14px 11px; font-size:14.5px; font-weight:800;
+            border-bottom:1px solid var(--line); display:flex; align-items:center; gap:7px}
+  .sec > h2 .req{font-size:10px; font-weight:800; color:var(--green); background:#EAF6EF;
+                 border:1px solid #BFE3CE; border-radius:3px; padding:2px 6px}
+
+  /* パッケージ */
+  .packs{display:grid; grid-template-columns:1fr 1fr; gap:9px; padding:12px 14px}
+  .pack{
+    position:relative; border:2px solid var(--line); border-radius:10px; background:#fff;
+    padding:13px 11px 11px; text-align:center; transition:border-color .12s, background .12s;
+  }
+  .pack[aria-pressed="true"]{border-color:var(--red); background:#FFF5F7}
+  .pack .pt{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums; line-height:1.1}
+  .pack .pt small{font-size:11px; font-weight:800; color:var(--sub); margin-left:2px}
+  .pack .twd{margin-top:5px; font-size:13px; font-weight:800; color:#4A433B; font-variant-numeric:tabular-nums}
+  .pack .bonus{
+    display:inline-block; margin-top:6px; font-size:10px; font-weight:800; color:#7A2A00;
+    background:#FFDD00; border-radius:3px; padding:2px 7px;
+  }
+  .pack .rate{margin-top:5px; font-size:10px; color:var(--sub); font-variant-numeric:tabular-nums}
+
+  /* 決済手段 */
+  .pays{padding:6px 14px 12px}
+  .pay{
+    width:100%; display:flex; align-items:center; gap:10px; text-align:left;
+    border:2px solid var(--line); border-radius:9px; padding:11px 12px; margin-top:8px; background:#fff;
+  }
+  .pay[aria-pressed="true"]{border-color:var(--red); background:#FFF5F7}
+  .pay .ic{
+    width:34px; height:34px; flex:0 0 auto; border-radius:7px; display:grid; place-items:center;
+    font-size:15px; background:#F6F2EA;
+  }
+  .pay .nm{flex:1; min-width:0}
+  .pay .nm b{display:block; font-size:13.5px; font-weight:800}
+  .pay .nm small{display:block; font-size:10.5px; color:var(--sub); margin-top:2px; line-height:1.5}
+  .pay .share{
+    font-size:10.5px; font-weight:800; color:var(--sub); font-variant-numeric:tabular-nums;
+    background:#F6F2EA; border-radius:999px; padding:3px 8px; flex:0 0 auto;
+  }
+
+  /* 解除権の告知 */
+  .notice{
+    margin:10px; border-radius:12px; overflow:hidden;
+    background:#FFF8E8; border:2px solid #E8C97A;
+  }
+  .notice h2{
+    margin:0; padding:12px 14px 10px; font-size:14px; font-weight:800; color:#7A4A00;
+    border-bottom:1px solid #F0DFB8; display:flex; align-items:center; gap:7px;
+  }
+  .notice .body{padding:12px 14px; font-size:12.5px; line-height:1.9; color:#5B4720}
+  .notice .body b{color:#3E2F10}
+  .notice .agree{
+    display:flex; gap:10px; align-items:flex-start; padding:12px 14px 14px;
+    border-top:1px solid #F0DFB8; cursor:pointer;
+  }
+  .notice .agree input{
+    width:22px; height:22px; flex:0 0 auto; margin:0; accent-color:var(--red); cursor:pointer;
+  }
+  .notice .agree span{font-size:12.5px; font-weight:800; line-height:1.6; color:#3E2F10}
+  .notice .ver{padding:0 14px 12px; font-size:10px; color:#8A7748; font-variant-numeric:tabular-nums}
+
+  .summary{padding:12px 14px}
+  .row{display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; font-size:13px}
+  .row[hidden]{display:none}    /* .row の display:flex がUAの [hidden] に勝つため明示する */
+  .row.total{border-top:1px solid var(--line); margin-top:6px; padding-top:11px; font-size:15px; font-weight:900}
+  .row .v{font-variant-numeric:tabular-nums; font-weight:800}
+  .row.total .v{color:var(--red); font-size:19px}
+
+  .buybar{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:60;
+    width:100%; max-width:480px; background:#fff; border-top:1px solid var(--line);
+    padding:10px 12px calc(10px + var(--safe)); box-shadow:0 -3px 12px rgba(120,60,0,.14);
+  }
+  .pay-btn{
+    width:100%; border-radius:9px; padding:14px; text-align:center; color:#fff; font-size:15.5px;
+    font-weight:800; background:var(--red); box-shadow:0 2.5px 0 var(--red-dark);
+  }
+  .pay-btn:active{transform:translateY(2.5px); box-shadow:none}
+  .pay-btn[disabled]{background:#D8D2CA; box-shadow:none; cursor:not-allowed}
+  .barnote{margin:8px 0 0; font-size:10.5px; color:var(--sub); text-align:center; line-height:1.55}
+  .barnote.warn{color:var(--amber); font-weight:800}
+
+  #toast{
+    position:fixed; left:50%; bottom:calc(112px + var(--safe)); transform:translateX(-50%) translateY(8px);
+    background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700; text-align:center;
+    padding:10px 18px; border-radius:999px; z-index:100; max-width:88%;
+    opacity:0; pointer-events:none; transition:opacity .22s, transform .22s;
+  }
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  dialog{border:none; border-radius:14px; padding:0; width:min(92vw,420px);
+         box-shadow:0 20px 60px -20px rgba(0,0,0,.5)}
+  dialog::backdrop{background:rgba(20,12,4,.6)}
+  dialog h3{margin:0; padding:16px 18px 12px; font-size:15.5px; border-bottom:1px solid var(--line)}
+  dialog .body{padding:15px 18px; font-size:12.5px; line-height:1.9; color:#4A433B; max-height:56vh; overflow-y:auto}
+  dialog .foot{padding:12px 18px calc(14px + var(--safe)); border-top:1px solid var(--line)}
+  dialog .close{width:100%; background:var(--red); color:#fff; font-weight:800; font-size:14px;
+                border-radius:8px; padding:12px; box-shadow:0 2px 0 var(--red-dark)}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <button class="back" aria-label="返回" onclick="history.back()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="ttl">購買點數</span>
+    <span class="bal"><span class="coin"></span><span id="bal">0</span> PT</span>
+  </header>
+
+  <section class="sec">
+    <h2>選擇方案</h2>
+    <div class="packs" id="packs"></div>
+  </section>
+
+  <section class="sec">
+    <h2>付款方式</h2>
+    <div class="pays" id="pays"></div>
+  </section>
+
+  <!-- 解除権の事前告知。購入ボタンの直近に置く。同意なしでは購入できない -->
+  <section class="notice">
+    <h2>⚠️ 關於七日解除權（購買前請確認）</h2>
+    <div class="body">
+      <p style="margin:0 0 8px">
+        點數為<b>非以有形媒介提供之數位內容</b>。依「通訊交易解除權合理例外情事適用準則」
+        第二條第五款，<b>本項商品不適用消費者保護法第19條之七日解除權</b>。
+      </p>
+      <p style="margin:0">
+        購買後<b>不得以「未使用」為由要求退費</b>。
+        抽出的卡片可申請實體寄送，該寄送依法另有七日解除權，屆時將另行告知。
+      </p>
+    </div>
+    <label class="agree" for="agree">
+      <input type="checkbox" id="agree">
+      <span>我已閱讀並同意上述內容，了解本項商品不適用七日解除權。</span>
+    </label>
+    <p class="ver" id="ver">—</p>
+  </section>
+
+  <section class="sec">
+    <h2>訂單內容</h2>
+    <div class="summary">
+      <div class="row"><span>點數</span><span class="v" id="sPt">—</span></div>
+      <div class="row"><span>付款方式</span><span class="v" id="sPay">—</span></div>
+      <div class="row" id="feeRow" hidden><span>手續費</span><span class="v" id="sFee">—</span></div>
+      <div class="row total"><span>應付金額</span><span class="v" id="sTotal">—</span></div>
+    </div>
+  </section>
+</div>
+
+<div class="buybar">
+  <button class="pay-btn" id="submit" disabled>請先勾選同意事項</button>
+  <p class="barnote" id="barnote">點數僅能用於本服務內，<b>不提供任何形式的現金兌換</b>。</p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlg">
+  <h3 id="dlgT">—</h3>
+  <div class="body" id="dlgB"></div>
+  <div class="foot"><button class="close" onclick="document.getElementById('dlg').close()">關閉</button></div>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  const BALANCE = 1200;
+
+  /* 點數パッケージ。bonus は付与率の上乗せ */
+  const PACKS = [
+    { id:"p1",  twd:100,  pt:1000,  bonus:0 },
+    { id:"p2",  twd:300,  pt:3150,  bonus:5 },
+    { id:"p3",  twd:500,  pt:5500,  bonus:10 },
+    { id:"p4",  twd:1000, pt:11500, bonus:15 },
+    { id:"p5",  twd:3000, pt:36000, bonus:20 },
+    { id:"p6",  twd:5000, pt:62500, bonus:25 }
+  ];
+
+  /* 台湾の決済比率（信用卡40 / 超商取貨25 / LINE Pay15 / ATM10 / 超商代碼10）。
+     超商系が合計35%を占めるので外せない。 */
+  const PAYS = [
+    { id:"credit",  icon:"💳", name:"信用卡",        note:"即時入帳",                    share:"40%", fee:0 },
+    { id:"linepay", icon:"🟢", name:"LINE Pay",      note:"即時入帳",                    share:"15%", fee:0 },
+    { id:"cvs",     icon:"🏪", name:"超商代碼繳費",  note:"取得代碼後至超商付款・約10分鐘入帳", share:"10%", fee:15 },
+    { id:"atm",     icon:"🏧", name:"ATM 轉帳",      note:"取得虛擬帳號後轉帳・約10分鐘入帳",   share:"10%", fee:0 }
+  ];
+
+  // 告知文面の版。変えたら版を上げる。同意ログにはこの版とハッシュを残す
+  const NOTICE_DOC = { version: "v1.0", updated: "2026-08-10" };
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+
+  let packId = PACKS[2].id, payId = PAYS[0].id;
+
+  $("#bal").textContent = fmt(BALANCE);
+  $("#ver").textContent = `告知事項 ${NOTICE_DOC.version}（${NOTICE_DOC.updated} 更新）`;
+
+  $("#packs").innerHTML = PACKS.map(p => `
+    <button class="pack" data-id="${p.id}" aria-pressed="${p.id === packId}">
+      <div class="pt">${fmt(p.pt)}<small>PT</small></div>
+      <div class="twd">NT$ ${fmt(p.twd)}</div>
+      ${p.bonus ? `<div class="bonus">加碼 ${p.bonus}%</div>` : ""}
+      <div class="rate">1 NT$ = ${(p.pt / p.twd).toFixed(1)} PT</div>
+    </button>`).join("");
+
+  $("#pays").innerHTML = PAYS.map(p => `
+    <button class="pay" data-id="${p.id}" aria-pressed="${p.id === payId}">
+      <span class="ic">${p.icon}</span>
+      <span class="nm"><b>${esc(p.name)}</b><small>${esc(p.note)}${p.fee ? `・手續費 NT$${p.fee}` : ""}</small></span>
+      <span class="share">${p.share}</span>
+    </button>`).join("");
+
+  function pickOne(container, id){
+    [...container.querySelectorAll("[data-id]")].forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.id === id)));
+  }
+
+  function render(){
+    const pack = PACKS.find(p => p.id === packId);
+    const pay  = PAYS.find(p => p.id === payId);
+    $("#sPt").textContent  = fmt(pack.pt) + " PT";
+    $("#sPay").textContent = pay.name;
+    $("#feeRow").hidden = !pay.fee;
+    $("#sFee").textContent = pay.fee ? `NT$ ${fmt(pay.fee)}` : "—";
+    $("#sTotal").textContent = `NT$ ${fmt(pack.twd + pay.fee)}`;
+
+    // 同意していなければ押せない。押してから断らない
+    const ok = $("#agree").checked;
+    const btn = $("#submit");
+    btn.disabled = !ok;
+    btn.textContent = ok ? `前往付款　NT$ ${fmt(pack.twd + pay.fee)}` : "請先勾選同意事項";
+
+    const note = $("#barnote");
+    if (pay.id === "cvs" || pay.id === "atm") {
+      note.className = "barnote warn";
+      note.textContent = "後付款方式：完成付款後才會發放點數。";
+    } else {
+      note.className = "barnote";
+      note.innerHTML = "點數僅能用於本服務內，<b>不提供任何形式的現金兌換</b>。";
+    }
+  }
+
+  $("#packs").addEventListener("click", e => {
+    const b = e.target.closest(".pack"); if (!b) return;
+    packId = b.dataset.id; pickOne($("#packs"), packId); render();
+  });
+  $("#pays").addEventListener("click", e => {
+    const b = e.target.closest(".pay"); if (!b) return;
+    payId = b.dataset.id; pickOne($("#pays"), payId); render();
+  });
+  $("#agree").addEventListener("change", render);
+
+  $("#submit").addEventListener("click", () => {
+    if ($("#submit").disabled) return;
+    const pack = PACKS.find(p => p.id === packId);
+    const pay  = PAYS.find(p => p.id === payId);
+    /* 本番の順序：
+       1. consent_log を書く（kind=purchase_terms, doc_version, doc_hash, ip, ua）
+       2. payment を pending で作る
+       3. 決済代行（綠界／藍新／LINE Pay）へ
+       4. webhook で paid を受けてから point_ledger に +pt を1行
+       後払い（超商・ATM）は pending の間に點數を渡さない */
+    toast(`consent_log(${NOTICE_DOC.version}) → payment(pending) → ${pay.name}（原型では未接続）`);
+  });
+
+  const DOC = {
+    t: "關於七日解除權",
+    b: `<p><b>點數（數位內容）</b></p>
+        <p>依消費者保護法第19條，通訊交易之消費者原則上得於收受商品或接受服務後七日內解除契約。
+           但「通訊交易解除權合理例外情事適用準則」第二條第五款規定，
+           <b>非以有形媒介提供之數位內容或一經提供即為完成之線上服務</b>不適用之。</p>
+        <p>本服務之點數屬於前述數位內容，<b>購買後不適用七日解除權</b>。
+           本告知於購買前提供，並記錄您的同意（版本 ${NOTICE_DOC.version}）。</p>
+        <p><b>實體寄送は別</b></p>
+        <p>抽出的卡片申請實體寄送時，<b>自收到商品之日起七日內</b>仍可依第19條解除契約。
+           申請寄送時會另行完整告知。</p>`
+  };
+  document.querySelector(".notice .body").addEventListener("click", () => {
+    $("#dlgT").textContent = DOC.t; $("#dlgB").innerHTML = DOC.b; $("#dlg").showModal();
+  });
+
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 2600);
+  }
+
+  render();
+})();
+</script>
+</body></html>

@@ -415,8 +415,9 @@
       <button class="cta${g.ghost ? " ghost" : ""}">${esc(g.cta)}</button>
     </li>`;
   }).join("");
+  // カードのどこを押しても詳細（C2）へ。確率も在庫も注意事項もそこに集約している
   $("#list").addEventListener("click", e => {
-    if (e.target.closest(".cta")) toast("請先註冊會員（原型未串接）");
+    if (e.target.closest(".g")) location.href = "./c2.html";
   });
 
   /* ── 下部タブ ─────────────────────────────── */
