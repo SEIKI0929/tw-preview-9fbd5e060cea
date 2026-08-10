@@ -210,7 +210,8 @@
             詳細說明於申請寄送時提供。</li>
         <li>未滿18歲須經法定代理人同意後方可使用。</li>
       </ul>
-      <a href="#" id="openTerms">閱讀完整條款 →</a>
+      <a href="#" id="openTerms">閱讀完整條款 →</a>　
+      <a href="./odds.html">所有卡包的機率一覽 →</a>
     </div>
   </section>
 </div>
@@ -313,8 +314,8 @@
     const b = e.target.closest("button.buy"); if (!b) return;
     if (b.disabled) return;
     const n = Number(b.dataset.n);
-    // 本番：POST /api/draw → プリロード → GachaEffect.play(draw)
-    toast(`${n} 連抽をサーバーで抽選 → 演出へ（原型では未接続）`);
+    // 本番：POST /api/draw → 画像プリロード → GachaEffect.play(draw)
+    location.href = `./effect.html?gacha=${encodeURIComponent(GACHA.id)}&count=${n}`;
   });
 
   // disabled でも理由を伝える。押しても何も起きない画面にしない

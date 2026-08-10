@@ -311,14 +311,14 @@
 
   <!-- C4：結果表示。ここも演出担当の領域なので、これは形を示すだけのスタブ -->
   <div id="result">
-    <p class="rhead">獲得 <b id="rcount">1</b> 件</p>
+    <p class="rhead">獲得 <b id="rcount">1</b> 張</p>
     <div class="rgrid" id="rgrid"></div>
     <div class="rbtns">
-      <button class="rb primary" data-next="again" data-count="1">もう一度</button>
-      <button class="rb primary" data-next="again" data-count="10">10連</button>
-      <button class="rb primary" data-next="again" data-count="100">100連</button>
-      <button class="rb" data-next="holdings">保有を見る</button>
-      <button class="rb" data-next="close">閉じる</button>
+      <button class="rb primary" data-next="again" data-count="1">再抽一次</button>
+      <button class="rb primary" data-next="again" data-count="10">10 連抽</button>
+      <button class="rb primary" data-next="again" data-count="100">100 連抽</button>
+      <button class="rb" data-next="holdings">查看卡片</button>
+      <button class="rb" data-next="close">關閉</button>
     </div>
   </div>
 
@@ -989,9 +989,64 @@
   resize();
   buildDeck();
   // ?auto=1 は通し再生の確認用（音は鳴らない）
+  /* ── 箱モード ─────────────────────────────────
+     ?gacha=g_1&count=10 で、抽選 → 演出 → C4 → 次のアクション まで通しで動く。
+     本番では apiDraw が POST /api/draw に置き換わるだけで、この構造は変わらない。 */
+  const GACHAS = {
+    g_1: { name:"噴火龍 ex 決戰包", price:500, stock:43, prizes:[
+      { rank:"S", name:"噴火龍 ex SAR", prob:0.0100 },
+      { rank:"A", name:"噴火龍 ex SR",  prob:0.0400 },
+      { rank:"B", name:"皮卡丘 V",      prob:0.1500 },
+      { rank:"C", name:"稀有卡 隨機",   prob:0.3000 },
+      { rank:"D", name:"一般卡 隨機",   prob:0.5000 }
+    ]}
+  };
+  const RANK_ORDER = { S:5, A:4, B:3, C:2, D:1 };
+  const tierOf = rank => rank === "S" ? "rainbow" : rank === "A" ? "green" : "gold";
+
+  /* 抽選はサーバーの責務。ここはその模擬。
+     クライアントで確定させると転蛋法が要求する確率の証明ができなくなるので、
+     本番では絶対にこの関数をブラウザ側に置かないこと。 */
+  function apiDraw(gachaId, count){
+    const g = GACHAS[gachaId] || GACHAS.g_1;
+    const results = [];
+    for (let i = 0; i < count; i++) {
+      let r = Math.random(), hit = g.prizes[g.prizes.length - 1];
+      for (const p of g.prizes) { if (r < p.prob) { hit = p; break; } r -= p.prob; }
+      results.push({
+        seq: i + 1, rank: hit.rank, name: hit.name,
+        effectTier: tierOf(hit.rank), isGuaranteed: false
+      });
+    }
+    // 最も良かった1件を箱が選ぶ（演出側でソートさせない）
+    let top = results[0];
+    for (const x of results) if (RANK_ORDER[x.rank] > RANK_ORDER[top.rank]) top = x;
+    return {
+      drawId: "d_mock_" + count, count,
+      effectTier: top.effectTier, topSeq: top.seq, results,
+      context: { balance: 12000,
+                 gacha: { id: gachaId, name: g.name, pricePerDraw: g.price, stockLeft: g.stock } }
+    };
+  }
+
+  async function runBox(gachaId, count){
+    let out = { next: "again", count };
+    while (out.next === "again") {
+      const draw = apiDraw(gachaId, out.count || 1);
+      // 本番はここで draw.results の imageUrl を先読みしてから play() を呼ぶ
+      out = await play(draw);
+    }
+    location.href = out.next === "holdings" ? "./cards.html" : "./c2.html";
+  }
+
   // ?tier=gold|green|rainbow を足すと、その段で自動再生する（確認用）
   const TIER = Q.get("tier");
-  if (SEEK !== null || Q.has("auto") || HOLD !== null || TIER) {
+  const GACHA_ID = Q.get("gacha");
+  if (GACHA_ID) {
+    ac();
+    ui.classList.add("hidden");
+    runBox(GACHA_ID, Math.max(1, Number(Q.get("count") || 1)));
+  } else if (SEEK !== null || Q.has("auto") || HOLD !== null || TIER) {
     const tier = (TIER && HERO[TIER]) ? TIER : "rainbow";
     const n = Number(Q.get("count") || 1);
     ui.classList.add("hidden");

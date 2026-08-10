@@ -130,6 +130,19 @@
   }
   .chip.on{color:#fff; background:var(--red); border-color:var(--red)}
 
+  /* ── 機率掲示バー（転蛋法） ─────────────────── */
+  .oddsbar{
+    display:flex; align-items:center; gap:8px; margin:10px 10px 0; padding:11px 13px;
+    background:#fff; border-radius:10px; text-decoration:none; color:var(--ink);
+    box-shadow:0 2px 8px rgba(120,60,0,.16);
+  }
+  .oddsbar .req{
+    font-size:10px; font-weight:800; color:#1E7A4D; background:#EAF6EF;
+    border:1px solid #BFE3CE; border-radius:3px; padding:3px 7px; flex:0 0 auto;
+  }
+  .oddsbar .tx{flex:1; font-size:13px; font-weight:800}
+  .oddsbar svg{color:#C9C1B6; flex:0 0 auto}
+
   /* ── セクション見出し ───────────────────────── */
   .lead{
     text-align:center; font-size:14px; font-weight:900; color:#7A3D00;
@@ -267,6 +280,14 @@
   <div class="wins" id="wins"></div>
 
   <div class="filter" id="filter"></div>
+
+  <!-- 転蛋法は「首頁・登入頁・購買頁」への掲示を求める。ここが首頁の掲示 -->
+  <a class="oddsbar" href="./odds.html">
+    <span class="req">依法揭露</span>
+    <span class="tx">中獎機率一覽</span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </a>
 
   <p class="lead">🚀 註冊會員限定！現在最超值的抽卡 🚀</p>
 

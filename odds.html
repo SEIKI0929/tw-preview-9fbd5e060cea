@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>中獎機率一覽 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* F1 機率一覽。転蛋法（網路連線遊戲服務定型化契約應記載及不得記載事項）は
+     「首頁・登入頁・購買頁」への掲示を求める。C2（購買頁）だけでは足りないため、
+     この一覧を独立ページにして app.html と auth.html からも到達可能にする。
+     版（gacha_version）ごとに凍結された確率を出す。過去の版も参照できること。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --green:#1E7A4D;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(28px + var(--safe))}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 8px;
+      display:flex; align-items:center; gap:6px; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .back{padding:10px; display:flex; color:var(--ink)}
+  .hd .ttl{font-size:15px; font-weight:800; flex:1}
+  .hd .req{font-size:10px; font-weight:800; color:var(--green); background:#EAF6EF;
+           border:1px solid #BFE3CE; border-radius:3px; padding:3px 7px; margin-right:6px}
+
+  .lead{margin:12px; padding:13px 15px; border-radius:11px;
+        background:rgba(255,255,255,.8); border:1px solid rgba(255,255,255,.95)}
+  .lead p{margin:0; font-size:11.5px; line-height:1.85; color:#6B4A16}
+  .lead p + p{margin-top:7px}
+  .lead b{color:#7A2A00}
+
+  .search{margin:0 12px 4px; position:relative}
+  .search input{width:100%; font-family:inherit; font-size:14px; color:var(--ink);
+                border:1.5px solid transparent; border-radius:9px; padding:11px 12px 11px 34px;
+                background:#fff; box-shadow:0 2px 8px rgba(120,60,0,.14)}
+  .search input:focus{border-color:var(--red); outline:none}
+  .search .ic{position:absolute; left:11px; top:50%; transform:translateY(-50%);
+              color:var(--sub); font-size:13px; pointer-events:none}
+
+  .pack{background:#fff; margin:10px 12px; border-radius:12px; overflow:hidden;
+        box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .pack > summary{list-style:none; cursor:pointer; padding:13px 14px;
+                  display:flex; align-items:center; gap:10px}
+  .pack > summary::-webkit-details-marker{display:none}
+  .pack .nm{flex:1; min-width:0}
+  .pack .nm b{display:block; font-size:14px; font-weight:800; line-height:1.35}
+  .pack .nm small{display:block; font-size:10.5px; color:var(--sub); margin-top:3px;
+                  font-variant-numeric:tabular-nums}
+  .pack .price{font-size:12.5px; font-weight:800; font-variant-numeric:tabular-nums;
+               color:var(--red); white-space:nowrap}
+  .pack .chev{color:#C9C1B6; transition:transform .18s; flex:0 0 auto}
+  .pack[open] .chev{transform:rotate(90deg)}
+
+  table{border-collapse:collapse; width:100%; font-size:13px; border-top:1px solid var(--line)}
+  th,td{padding:9px 14px; text-align:left; border-bottom:1px solid var(--line)}
+  th{font-size:10.5px; color:var(--sub); font-weight:700}
+  td.n{text-align:right; font-variant-numeric:tabular-nums; font-weight:800; white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tfoot td{font-weight:800; background:#FBF8F3}
+  tfoot td.bad{color:var(--red)}
+  .rk{display:inline-flex; align-items:center; justify-content:center; min-width:24px;
+      font:900 11.5px/1 "Arial Black",sans-serif; color:#fff; border-radius:4px; padding:4px 6px}
+  .rk.S{background:linear-gradient(#FFD24A,#C98A00); color:#3A2400}
+  .rk.A{background:linear-gradient(#B23EFF,#6D1FB0)}
+  .rk.B{background:linear-gradient(#3EA5FF,#1B5FD0)}
+  .rk.C{background:linear-gradient(#38C87A,#1E7A4D)}
+  .rk.D{background:#B9AFA2}
+
+  .meta{padding:10px 14px; font-size:10.5px; color:var(--sub); line-height:1.7;
+        background:#FBF8F3; border-top:1px solid var(--line)}
+  .meta b{color:#5E564D}
+
+  .none{margin:24px 12px; padding:30px 20px; border-radius:12px; text-align:center;
+        background:rgba(255,255,255,.78); font-size:13px; font-weight:700; color:#7A4A00}
+
+  .foot{margin:14px 12px 0; padding:13px 15px; border-radius:11px;
+        background:rgba(255,255,255,.72); font-size:10.5px; line-height:1.8; color:#6B4A16}
+  .foot b{color:#7A2A00}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <button class="back" aria-label="返回" onclick="history.length > 1 ? history.back() : location.href='./app.html'">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="ttl">中獎機率一覽</span>
+    <span class="req">依法揭露</span>
+  </header>
+
+  <div class="lead">
+    <p>
+      本頁依「<b>網路連線遊戲服務定型化契約應記載及不得記載事項</b>」揭露所有卡包之中獎機率。
+      同一內容亦揭露於首頁、登入頁與各卡包購買頁。
+    </p>
+    <p>
+      機率為<b>每一次抽卡的獨立機率</b>，不因抽卡次數而變動。連抽不會提高單次機率。
+      機率變更時會建立新版本，<b>變更前已完成的抽卡仍適用當時的版本</b>。
+    </p>
+  </div>
+
+  <div class="search">
+    <span class="ic">🔍</span>
+    <input id="q" type="search" placeholder="搜尋卡包名稱" autocomplete="off">
+  </div>
+
+  <div id="list"></div>
+  <p class="none" id="none" hidden>找不到符合的卡包。</p>
+
+  <div class="foot">
+    <b>關於最低保證</b>：標示最低保證的卡包，每一次抽卡至少可獲得該價值的卡片。<br>
+    <b>關於點數</b>：卡片可轉換為點數。點數僅能用於本服務內，<b>不提供任何形式的現金兌換</b>。
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* 本番は gacha_version 単位で API から。version_no と published_at を必ず添えること。
+     確率を変えたら版を上げる（過去の抽選の証明が消えないように）。 */
+  const PACKS = [
+    { id:"g_1", name:"噴火龍 ex 決戰包", price:500, version:3, published:"2026-08-08",
+      guarantee:50, prizes:[
+        { rank:"S", name:"噴火龍 ex SAR", prob:0.0100 },
+        { rank:"A", name:"噴火龍 ex SR",  prob:0.0400 },
+        { rank:"B", name:"皮卡丘 V",      prob:0.1500 },
+        { rank:"C", name:"稀有卡 隨機",   prob:0.3000 },
+        { rank:"D", name:"一般卡 隨機",   prob:0.5000 }
+      ]},
+    { id:"g_2", name:"海賊王 世界最強戰士", price:300, version:1, published:"2026-08-05",
+      guarantee:30, prizes:[
+        { rank:"S", name:"香克斯 SEC",  prob:0.0050 },
+        { rank:"A", name:"魯夫 SR",     prob:0.0350 },
+        { rank:"B", name:"索隆 R",      prob:0.1600 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.3000 },
+        { rank:"D", name:"一般卡 隨機", prob:0.5000 }
+      ]},
+    { id:"g_3", name:"25 週年紀念收藏", price:1000, version:2, published:"2026-08-07",
+      guarantee:100, prizes:[
+        { rank:"S", name:"紀念 SAR",    prob:0.0200 },
+        { rank:"A", name:"紀念 SR",     prob:0.0800 },
+        { rank:"B", name:"紀念 R",      prob:0.2000 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.3000 },
+        { rank:"D", name:"一般卡 隨機", prob:0.4000 }
+      ]},
+    { id:"g_4", name:"伊布英雄 1 箱未拆", price:100, version:1, published:"2026-08-09",
+      guarantee:null, prizes:[
+        { rank:"S", name:"伊布 SAR",    prob:0.0010 },
+        { rank:"A", name:"伊布 SR",     prob:0.0090 },
+        { rank:"B", name:"伊布 R",      prob:0.0900 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.4000 },
+        { rank:"D", name:"一般卡 隨機", prob:0.5000 }
+      ]}
+  ];
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+  const pct = p => (p * 100).toFixed(2) + "%";
+
+  const CHEV = `<svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"
+    ><path d="M9 18l6-6-6-6"/></svg>`;
+
+  function render(filter){
+    const q = (filter || "").trim();
+    const rows = q ? PACKS.filter(p => p.name.includes(q)) : PACKS;
+    $("#none").hidden = rows.length > 0;
+    $("#list").innerHTML = rows.map((p, i) => {
+      const sum = p.prizes.reduce((a, x) => a + x.prob, 0);
+      // 合計が100%にならないのは設定ミス。黙って出さず画面に出す
+      const bad = Math.abs(sum - 1) > 1e-9;
+      return `<details class="pack" ${i === 0 && q ? "open" : ""}>
+        <summary>
+          <span class="nm">
+            <b>${esc(p.name)}</b>
+            <small>版本 ${p.version}・${p.published} 起適用${p.guarantee ? `・最低保證 ${p.guarantee}PT` : ""}</small>
+          </span>
+          <span class="price">${fmt(p.price)} PT</span>
+          ${CHEV}
+        </summary>
+        <table>
+          <thead><tr><th>獎項</th><th>內容</th><th style="text-align:right">機率</th></tr></thead>
+          <tbody>${p.prizes.map(z => `
+            <tr>
+              <td><span class="rk ${z.rank}">${z.rank}</span></td>
+              <td>${esc(z.name)}</td>
+              <td class="n">${pct(z.prob)}</td>
+            </tr>`).join("")}</tbody>
+          <tfoot><tr>
+            <td colspan="2">合計</td>
+            <td class="n ${bad ? "bad" : ""}">${pct(sum)}${bad ? "（設定錯誤）" : ""}</td>
+          </tr></tfoot>
+        </table>
+        <div class="meta">
+          <b>機率版本</b> v${p.version}（${p.published} 起適用）
+          <b>單抽</b> ${fmt(p.price)} PT
+          ${p.guarantee ? `　<b>最低保證</b> ${p.guarantee} PT` : ""}
+        </div>
+      </details>`;
+    }).join("");
+  }
+
+  $("#q").addEventListener("input", e => render(e.target.value));
+  render("");
+})();
+</script>
+</body></html>
