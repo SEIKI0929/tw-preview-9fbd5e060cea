@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DOPA 台湾展開 — 検討サマリ</title>
+</head><body>
+<style>
+  /* 事業判断のための資料。装飾より可読性と構造の明示を優先する。
+     朱赤＝台湾とDOPAの赤。琥珀＝要注意。落ち着いた紙面に一点だけ赤を置く。 */
+  :root{
+    --paper:#FBF9F6;  --ink:#1F1A16;  --sub:#6E645B;
+    --rule:#E4DDD3;   --card:#FFFFFF;
+    --red:#D9273E;    --amber:#A85D00; --amber-bg:#FDF3E3;
+    --good:#1E7A4D;   --good-bg:#EAF6EF;
+    --shadow:0 1px 2px rgba(60,40,20,.06), 0 8px 24px -12px rgba(60,40,20,.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#17140F; --ink:#F0EAE2; --sub:#A79C90;
+      --rule:#332C24;  --card:#201B15;
+      --red:#FF6B7E;   --amber:#F0B15E; --amber-bg:#2A1E0E;
+      --good:#5FD097;  --good-bg:#10251A;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#17140F; --ink:#F0EAE2; --sub:#A79C90;
+    --rule:#332C24;  --card:#201B15;
+    --red:#FF6B7E;   --amber:#F0B15E; --amber-bg:#2A1E0E;
+    --good:#5FD097;  --good-bg:#10251A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"]{
+    --paper:#FBF9F6;  --ink:#1F1A16;  --sub:#6E645B;
+    --rule:#E4DDD3;   --card:#FFFFFF;
+    --red:#D9273E;    --amber:#A85D00; --amber-bg:#FDF3E3;
+    --good:#1E7A4D;   --good-bg:#EAF6EF;
+    --shadow:0 1px 2px rgba(60,40,20,.06), 0 8px 24px -12px rgba(60,40,20,.18);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font:400 16px/1.85 "Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",
+         "Noto Sans JP",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:56px 22px 96px}
+
+  header{border-bottom:3px solid var(--ink); padding-bottom:22px; margin-bottom:38px}
+  .eyebrow{
+    font-size:12px; font-weight:700; letter-spacing:.16em; color:var(--red);
+    text-transform:uppercase; margin:0 0 10px;
+  }
+  h1{font-size:clamp(27px,5.4vw,40px); line-height:1.25; margin:0 0 12px; text-wrap:balance; letter-spacing:-.01em}
+  .meta{font-size:13px; color:var(--sub); margin:0}
+
+  h2{
+    font-size:clamp(19px,3.6vw,24px); line-height:1.4; margin:52px 0 6px;
+    padding-top:26px; border-top:1px solid var(--rule); text-wrap:balance;
+  }
+  h2 .n{color:var(--red); font-variant-numeric:tabular-nums; margin-right:.5em}
+  h3{font-size:16.5px; margin:30px 0 6px; line-height:1.5}
+  p{margin:14px 0}
+  strong{font-weight:700}
+  a{color:var(--red); text-underline-offset:3px}
+
+  .lede{font-size:17.5px; color:var(--sub); margin:0 0 4px; line-height:1.8}
+
+  .callout{
+    background:var(--amber-bg); border-left:4px solid var(--amber);
+    padding:18px 20px; border-radius:0 8px 8px 0; margin:24px 0;
+  }
+  .callout.ok{background:var(--good-bg); border-left-color:var(--good)}
+  .callout p{margin:8px 0}
+  .callout p:first-child{margin-top:0}
+  .callout p:last-child{margin-bottom:0}
+  .callout .h{font-weight:700; font-size:14px; letter-spacing:.04em; color:var(--amber)}
+  .callout.ok .h{color:var(--good)}
+
+  .tablewrap{overflow-x:auto; margin:22px 0; border:1px solid var(--rule); border-radius:10px; background:var(--card)}
+  table{border-collapse:collapse; width:100%; min-width:460px; font-size:14.5px}
+  th,td{padding:12px 15px; text-align:left; border-bottom:1px solid var(--rule); vertical-align:top}
+  th{font-weight:700; font-size:12.5px; letter-spacing:.05em; color:var(--sub); background:transparent}
+  tr:last-child td{border-bottom:none}
+  td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+
+  .steps{counter-reset:s; list-style:none; padding:0; margin:24px 0}
+  .steps li{
+    counter-increment:s; position:relative; padding:16px 18px 16px 56px;
+    background:var(--card); border:1px solid var(--rule); border-radius:10px;
+    margin-bottom:10px; box-shadow:var(--shadow);
+  }
+  .steps li::before{
+    content:counter(s); position:absolute; left:16px; top:15px;
+    width:26px; height:26px; border-radius:50%; background:var(--red); color:#fff;
+    font-size:13px; font-weight:700; display:grid; place-items:center;
+  }
+  .steps .t{font-weight:700; display:block; margin-bottom:2px}
+  .steps .d{font-size:14px; color:var(--sub); line-height:1.7}
+
+  ul.plain{padding-left:1.3em; margin:14px 0}
+  ul.plain li{margin:7px 0}
+
+  .pill{
+    display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.04em;
+    border-radius:999px; padding:3px 10px; vertical-align:1px; white-space:nowrap;
+  }
+  .pill.wait{background:var(--amber-bg); color:var(--amber); border:1px solid currentColor}
+  .pill.done{background:var(--good-bg); color:var(--good); border:1px solid currentColor}
+
+  footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--rule);
+         font-size:13px; color:var(--sub); line-height:1.8}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">検討サマリ ／ 社外共有用</p>
+  <h1>DOPAオリパ 台湾展開<br>— 事業の成立条件は1点に絞れました</h1>
+  <p class="meta">2026年8月10日時点　｜　UI解析・法規制調査まで完了、弁護士確認が未着手</p>
+</header>
+
+<p class="lede">
+日本の DOPA オリパを台湾向けに展開するにあたり、UIの解析と現地法規の調査を行いました。
+<strong>結論として事業は成立し得ますが、日本版の仕組みをそのまま移すと成立しません。</strong>
+理由と、変えるべき1点を以下にまとめます。
+</p>
+
+<h2><span class="n">01</span>いちばん重要な発見</h2>
+
+<p>
+台湾の論点は<strong>賭博規制ではありませんでした。</strong>消費者保護法19条の
+<strong>「7日間の無条件解除権」</strong>です。
+</p>
+
+<p>
+台湾では通信販売に、<strong>理由の説明も費用負担も不要で7日以内に契約を解除できる権利</strong>が
+与えられています。例外は7項目だけが政令で定められており、<strong>くじ・福袋・ブラインドボックスは
+含まれていません。</strong>さらにこの規定は強行規定で、<strong>契約でも運用でも排除できません</strong>
+（違反する約定は無効、と条文に明記）。
+</p>
+
+<div class="callout">
+  <p class="h">そのままでは何が起きるか</p>
+  <p>
+    カードを直接発送するモデルだと、<strong>「引いてハズレたから7日以内に返品して全額返金」が
+    法的に通ってしまいます。</strong>オリパというビジネスモデルが根本から成り立ちません。
+  </p>
+</div>
+
+<h3>条文から確認した4点</h3>
+
+<div class="tablewrap">
+<table>
+  <tr><th>論点</th><th>内容</th></tr>
+  <tr><td>起算点</td><td><strong>商品を受け取った時点</strong>から7日。発送時でも申請時でもない</td></tr>
+  <tr><td>告知を怠った場合</td><td><strong>7日のカウントが始まらない。</strong>告知は期限を始動させるスイッチ</td></tr>
+  <tr><td>上限</td><td>告知漏れでも4か月で消滅</td></tr>
+  <tr><td>排除の可否</td><td><strong>不可。</strong>「違反する約定は無効」と条文にある</td></tr>
+</table>
+</div>
+
+<h2><span class="n">02</span>解決策 — 取引を3つに割る</h2>
+
+<p>
+例外7項目のうち5号に<strong>「有形媒体によらないデジタルコンテンツ、または提供完了した
+オンラインサービス」</strong>があります。ここに乗せます。
+</p>
+
+<p>
+台湾で合法に運営されているオンラインゲーム（星城Online 等）が成立しているのは、
+まさにこの構造だからです。
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th>段階</th><th>中身</th><th>7日解除権</th></tr>
+  <tr><td class="num">① 課金</td><td>ポイントを現金で購入</td><td><strong>例外5号に該当</strong>（事前告知が条件）</td></tr>
+  <tr><td class="num">② 抽選</td><td>ポイントを使って引く</td><td>発生しない（新たな現金取引ではない）</td></tr>
+  <tr><td class="num">③ 発送</td><td>引いた品を別途申請して受け取る</td><td><strong>ここだけが論点</strong></td></tr>
+</table>
+</div>
+
+<p>
+<strong>この形なら、売上の発生点（①）と解除権リスク（③）が分離されます。</strong>
+現金の入口では解除権が働かず、実物を送るときだけ向き合えばよくなります。
+</p>
+
+<div class="callout">
+  <p class="h">未解決 — ここが事業の生死を分けます</p>
+  <p>
+    <strong>③が独立した取引と認められるか、①からの一連の取引と見られるか。</strong>
+    消費者から見れば「金を払ってカードを買った」ので、一体と評価されるリスクがあります。
+    認められれば事業は成立し、一体と見られれば①に遡って解除権が及びます。
+  </p>
+  <p><strong>台湾の弁護士に確認すべきは、この一点です。</strong></p>
+</div>
+
+<h2><span class="n">03</span>賭博規制 — 対処法は判明しています</h2>
+
+<p>
+台湾刑法266条は2023年1月の改正で<strong>インターネットを用いた賭博を明文で対象に加えました。</strong>
+一方で一番賞については、<strong>最低保証があるため賭博の構成要件を満たさない</strong>という整理が
+示されています。必ず何らかの商品が手に入る以上、「財物の得喪」ではなく対価のある売買だという理屈です。
+</p>
+
+<p>→ <strong>最低保証を明示的に置くことが、法的な意味を持ちます。</strong></p>
+
+<h3>ただし、現金化した瞬間に線を越えます</h3>
+
+<p>
+2026年5月、複数のゲームサイトのポイントを現金と交換していた業者が摘発されました。
+3年で80億台湾ドルを扱い、<strong>賭博・マネーロンダリング防止法・組織犯罪防制条例で29人が送検</strong>
+されています。<strong>摘発されたのはゲーム運営会社ではなく、換金を仲介した業者でした。</strong>
+</p>
+
+<div class="tablewrap">
+<table>
+  <tr><th>仕組み</th><th>判定</th></tr>
+  <tr><td>ポイントをサービス内でのみ使える</td><td><strong style="color:var(--good)">合法側</strong></td></tr>
+  <tr><td>ポイントを現金に換えられる</td><td><strong style="color:var(--red)">賭博罪＋マネロン</strong></td></tr>
+</table>
+</div>
+
+<div class="callout">
+  <p class="h">用語の設計が法的な意味を持ちます</p>
+  <p>
+    ハズレ品をポイントに変える仕組み自体は問題ありません。ただし<strong>「買取」という語は
+    台湾では「現金を払う」と読まれ、その瞬間に摘発された業者と同じ枠に入ります。</strong>
+    「點數轉換」で統一し、現金化の導線は一切作らない方針とします。
+  </p>
+</div>
+
+<h2><span class="n">04</span>確率表示は法的義務です</h2>
+
+<p>
+2023年施行の通称「転蛋法」により、<strong>有料の機会型商品は当選確率の開示が義務</strong>です。
+</p>
+
+<ul class="plain">
+  <li><strong>掲示場所</strong>：公式サイトのトップ、ログインページ、購入ページ</li>
+  <li><strong>罰則</strong>：是正命令に従わない場合3〜30万元、再度従わない場合5〜50万元、<strong>反復処罰が可能</strong></li>
+</ul>
+
+<h2><span class="n">05</span>台湾固有の事情</h2>
+
+<h3>決済 — コンビニ系が3分の1を占めます</h3>
+
+<div class="tablewrap">
+<table>
+  <tr><th>支払い方法</th><th>比率</th></tr>
+  <tr><td>クレジットカード</td><td class="num">40%</td></tr>
+  <tr><td>コンビニ受取時払い</td><td class="num">25%</td></tr>
+  <tr><td>LINE Pay</td><td class="num">15%</td></tr>
+  <tr><td>ATM振込</td><td class="num">10%</td></tr>
+  <tr><td>コンビニ支払コード</td><td class="num">10%</td></tr>
+</table>
+</div>
+
+<p>
+<strong>コンビニ系が合計35%。クレジットカードだけでは3分の1を取り逃します。</strong>
+決済代行は綠界ECPay（手数料2.75%）か藍新NewebPay（2.8%）に、LINE Payを組み合わせる構成が標準です。
+</p>
+
+<h3>市場環境 — 最悪のタイミングであり、最大の機会でもあります</h3>
+
+<p>
+<strong>2026年3月、台北のカードショップが2〜3億台湾ドルを持ち逃げしました。</strong>
+被害者3,000人以上。台北地検が捜査中です。
+</p>
+
+<p>
+問題の本質は<strong>「業者がカードを預かる」モデルへの信頼崩壊</strong>でした。
+<strong>これはオリパの中核と同じ構造です。</strong>引いたカードを業者が保管し、まとめて発送する。
+台湾の消費者はいま、まさにこの形を警戒しています。
+</p>
+
+<div class="callout ok">
+  <p class="h">裏を返せば</p>
+  <p>
+    <strong>信頼を可視化できる事業者には空白があります。</strong>
+    発送状況の追跡、在庫の実在証明、運営会社の実名・住所開示。
+    日本版には無い要素が、台湾では差別化そのものになります。
+  </p>
+</div>
+
+<h2><span class="n">06</span>設計上、動かせない決めごと</h2>
+
+<p>法規制から直接くる制約です。UIの都合で崩せません。</p>
+
+<ol class="steps">
+  <li><span class="t">抽選はデジタル完結、実物発送は別途申請</span>
+      <span class="d">①②③の分離が崩れると事業が成立しません</span></li>
+  <li><span class="t">「買取」「換金」という語を使わない</span>
+      <span class="d">「點數轉換」で統一。現金化の導線は作らない</span></li>
+  <li><span class="t">確率を全等級公開する</span>
+      <span class="d">トップ・ログイン・購入ページの3か所。転蛋法の要件</span></li>
+  <li><span class="t">解除権の事前告知をUIに置く</span>
+      <span class="d">告知しないと7日のカウントが始まらず、最長4か月権利が残ります</span></li>
+  <li><span class="t">最低保証を明示する</span>
+      <span class="d">賭博罪の構成要件を外す根拠になります</span></li>
+  <li><span class="t">信頼の可視化を組み込む</span>
+      <span class="d">発送追跡・在庫証明・運営情報。台湾では差別化要因です</span></li>
+</ol>
+
+<h2><span class="n">07</span>現在地と、次に決めること</h2>
+
+<div class="tablewrap">
+<table>
+  <tr><th>項目</th><th>状態</th></tr>
+  <tr><td>日本版のUI解析</td><td><span class="pill done">完了</span></td></tr>
+  <tr><td>台湾向けモバイルUI原型</td><td><span class="pill done">完了</span> ただし3分割型へ作り替えが必要　<a href="./app.html">画面を見る →</a></td></tr>
+  <tr><td>ガチャ演出（10秒）</td><td><span class="pill done">完了</span>　<a href="./gacha.html">再生する →</a></td></tr>
+  <tr><td>法規制調査</td><td><span class="pill done">完了</span></td></tr>
+  <tr><td>弁護士確認（例外5号への該当性）</td><td><span class="pill wait">未着手</span> 最優先</td></tr>
+  <tr><td>法人形態（台湾法人か越境か）</td><td><span class="pill wait">未定</span></td></tr>
+  <tr><td>ブランド名・商号</td><td><span class="pill wait">未定</span></td></tr>
+  <tr><td>実素材（商品・価格・画像）</td><td><span class="pill wait">未入手</span></td></tr>
+</table>
+</div>
+
+<h3>ご相談したいこと</h3>
+
+<ul class="plain">
+  <li><strong>弁護士確認を先に取るか、3分割前提でUIを作り込むか。</strong>
+      前者が本筋ですが、確認には時間がかかります</li>
+  <li><strong>一般商品（スニーカー等）の扱い。</strong>カードと法的扱いは同じですが、
+      現物目当てで全員が発送に進むため解除権に直面する頻度が高く、
+      サイズ違いの返品と真贋保証の問題も加わります。別導線を推奨します</li>
+  <li><strong>法人形態。</strong>統一発票と営業税5%の扱いが変わります</li>
+</ul>
+
+<footer>
+  本資料は公開情報（条文・行政院・立法院・報道）に基づく調査結果であり、法的助言ではありません。
+  実施前に台湾の弁護士による確認をお願いします。<br>
+  主な出典：全國法規資料庫（消費者保護法19条、通訊交易解除權合理例外情事適用準則）、
+  行政院消費者保護會、立法院、聯合新聞網、公視新聞。
+</footer>
+</div>
+</body></html>

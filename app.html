@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DOPA 台灣 — 線上抽卡</title>
+</head><body>
+<style>
+  /* ───────────────────────────────────────────────
+     dopa-game.jp のUIを台灣向け（繁體中文）に再構成
+     配色は実サイトから抽出：黄〜橙の地に赤のアクセント
+     ─────────────────────────────────────────────── */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;      /* 背景グラデーション */
+    --red:#EC1E4E;                      /* CTA・アクティブ */
+    --red-dark:#C4103A;
+    --ink:#221A12;                      /* 黄地に合う焦げ寄りの黒 */
+    --sub:#8A8178;                      /* 黄味を含むグレー */
+    --line:#E6E1DA;
+    --card:#FFFFFF;
+    --coin:#F5B920;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{
+    font-family:var(--tc); color:var(--ink);
+    background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+    background-attachment:fixed;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(64px + var(--safe)); position:relative}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  ul{list-style:none; margin:0; padding:0}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  /* ── ヘッダー ───────────────────────────────── */
+  .hd{
+    position:sticky; top:0; z-index:50;
+    background:#fff; height:52px; padding:0 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 1px 0 rgba(0,0,0,.08);
+  }
+  .logo{display:flex; align-items:center; gap:6px}
+  .logo svg{height:22px; width:auto; display:block}
+  .hd-btns{display:flex; gap:8px}
+  .btn-line,.btn-fill{
+    font-size:13px; font-weight:700; border-radius:999px;
+    padding:7px 14px; white-space:nowrap; line-height:1;
+  }
+  .btn-line{color:var(--red); border:1.5px solid var(--red); background:#fff}
+  .btn-fill{color:#fff; background:var(--red)}
+
+  /* ── バナーカルーセル ───────────────────────── */
+  .carousel{position:relative; background:#fff; padding:8px 0 6px}
+  .track{
+    display:flex; gap:8px; padding:0 12px;
+    overflow-x:auto; scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+  }
+  .track::-webkit-scrollbar{display:none}
+  .slide{
+    flex:0 0 100%; scroll-snap-align:center;
+    aspect-ratio:16/5; border-radius:8px; overflow:hidden;
+    display:grid; place-items:center; position:relative;
+    color:#fff; text-align:center; font-weight:900;
+  }
+  .slide b{font-size:clamp(15px,4.6vw,22px); text-shadow:0 2px 0 rgba(0,0,0,.35); line-height:1.25}
+  .slide small{display:block; font-size:11px; font-weight:700; opacity:.95; margin-top:2px}
+  .dots{display:flex; justify-content:center; gap:5px; padding-top:7px}
+  .dots i{width:5px; height:5px; border-radius:50%; background:#D8D2CA; transition:background .2s}
+  .dots i.on{background:var(--red)}
+
+  /* ── カテゴリタブ ───────────────────────────── */
+  .cats{
+    background:#fff; display:flex; gap:0; overflow-x:auto;
+    scrollbar-width:none; border-top:1px solid #F1EDE7;
+  }
+  .cats::-webkit-scrollbar{display:none}
+  .cats button{
+    flex:0 0 auto; padding:12px 15px; font-size:14px; font-weight:700;
+    color:var(--sub); border-bottom:3px solid transparent; white-space:nowrap;
+    display:flex; align-items:center; gap:4px;
+  }
+  .cats button.on{color:var(--ink); border-bottom-color:var(--red)}
+  .cats .live::before{
+    content:""; width:6px; height:6px; border-radius:50%;
+    background:var(--red); animation:blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink{50%{opacity:.25}}
+
+  /* ── 中獎快報（横流れ） ─────────────────────── */
+  .wins{
+    background:#fff; display:flex; gap:8px; padding:8px 12px;
+    overflow-x:auto; scrollbar-width:none; border-top:1px solid #F1EDE7;
+  }
+  .wins::-webkit-scrollbar{display:none}
+  .win{
+    flex:0 0 auto; display:flex; align-items:center; gap:7px;
+    background:#FBF8F3; border:1px solid #F0EAE1; border-radius:8px;
+    padding:5px 9px 5px 5px;
+  }
+  .win .mini{
+    width:30px; height:42px; border-radius:3px; flex:0 0 auto;
+    background:linear-gradient(145deg,#8ED0FF,#2E6FD0 55%,#8ED0FF);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.6);
+  }
+  .win .txt{min-width:0}
+  .win .badge{
+    display:inline-block; background:var(--red); color:#fff;
+    font-size:9px; font-weight:800; border-radius:3px; padding:1px 4px; line-height:1.4;
+  }
+  .win .nm{font-size:11px; font-weight:700; margin-top:2px; white-space:nowrap}
+  .win .tm{font-size:10px; color:var(--sub); white-space:nowrap}
+  .win .tm b{color:var(--red); font-weight:800; margin-right:4px}
+
+  /* ── フィルタ ───────────────────────────────── */
+  .filter{
+    background:#fff; padding:9px 12px 11px;
+    display:flex; align-items:center; gap:7px;
+    overflow-x:auto; scrollbar-width:none; border-top:1px solid #F1EDE7;
+  }
+  .filter::-webkit-scrollbar{display:none}
+  .count{font-size:12px; font-weight:800; white-space:nowrap; flex:0 0 auto}
+  .count b{color:var(--red); font-size:15px; margin-right:1px}
+  .chip{
+    flex:0 0 auto; font-size:12px; font-weight:700; color:var(--sub);
+    border:1px solid var(--line); background:#fff;
+    border-radius:999px; padding:5px 12px; white-space:nowrap;
+  }
+  .chip.on{color:#fff; background:var(--red); border-color:var(--red)}
+
+  /* ── セクション見出し ───────────────────────── */
+  .lead{
+    text-align:center; font-size:14px; font-weight:900; color:#7A3D00;
+    padding:14px 16px 10px; line-height:1.5;
+  }
+
+  /* ── 抽卡カード ─────────────────────────────── */
+  .list{display:flex; flex-direction:column; gap:14px; padding:0 10px}
+  .g{background:var(--card); border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(120,60,0,.18)}
+  .g .meta{display:flex; align-items:center; gap:6px; padding:9px 10px 8px; overflow-x:auto; scrollbar-width:none}
+  .g .meta::-webkit-scrollbar{display:none}
+  .heat{
+    flex:0 0 auto; color:var(--red); font-size:12px; font-weight:800;
+    display:flex; align-items:center; gap:2px;
+  }
+  .tag{
+    flex:0 0 auto; font-size:11px; font-weight:700; color:#6B635A;
+    border:1px solid var(--line); border-radius:999px; padding:3px 9px; white-space:nowrap;
+  }
+  /* サムネイル：実画像に差し替える場所。今はCSSで雰囲気を再現 */
+  .thumb{
+    position:relative; aspect-ratio:16/9; display:grid; place-items:center;
+    text-align:center; color:#fff; padding:10px 14px; overflow:hidden;
+  }
+  .thumb::after{
+    content:""; position:absolute; inset:0;
+    background:repeating-conic-gradient(from 0deg at 50% 50%,
+      rgba(255,255,255,.16) 0deg 3deg, transparent 3deg 8deg);
+    mix-blend-mode:overlay;
+  }
+  .thumb .ttl{
+    position:relative; z-index:1;
+    font-size:clamp(17px,5.6vw,26px); font-weight:900; letter-spacing:-.01em;
+    line-height:1.15; text-shadow:0 2px 0 rgba(0,0,0,.4), 0 0 14px rgba(255,220,120,.5);
+  }
+  .thumb .sub{
+    position:relative; z-index:1; margin-top:5px;
+    font-size:11px; font-weight:800; line-height:1.4;
+    background:rgba(0,0,0,.45); border-radius:3px; padding:3px 8px; display:inline-block;
+  }
+  .thumb .corner{
+    position:absolute; z-index:2; left:8px; top:8px;
+    background:#FFDD00; color:#7A2A00; font-size:10px; font-weight:900;
+    border-radius:4px; padding:3px 7px; line-height:1.3; text-align:center;
+    box-shadow:0 2px 0 #C99400;
+  }
+  .g .price{
+    display:flex; align-items:baseline; gap:6px; padding:10px 12px 4px; flex-wrap:wrap;
+  }
+  .coin{width:17px; height:17px; border-radius:50%; flex:0 0 auto; align-self:center;
+        background:radial-gradient(circle at 35% 30%,#FFE9A0,var(--coin) 60%,#C98A00);
+        box-shadow:inset 0 -1px 0 rgba(0,0,0,.15)}
+  .was{font-size:13px; color:var(--sub); text-decoration:line-through; font-weight:700}
+  .now{font-size:19px; font-weight:900; font-variant-numeric:tabular-nums}
+  .now.free{color:var(--red)}
+  .per{font-size:11px; color:var(--sub); font-weight:700}
+  .left{margin-left:auto; font-size:12px; color:var(--sub); font-weight:700; white-space:nowrap}
+  .left b{color:var(--ink)}
+  .note{padding:2px 12px 0; display:flex; flex-wrap:wrap; gap:6px; align-items:center}
+  .note .lim{
+    font-size:10.5px; font-weight:700; color:#9A6A2E;
+    background:#FFF3DC; border-radius:3px; padding:3px 7px;
+  }
+  .note .chance{font-size:12px; font-weight:800; color:var(--red)}
+  .cta{
+    display:block; width:calc(100% - 24px); margin:10px 12px 12px;
+    background:var(--red); color:#fff; font-size:14.5px; font-weight:800;
+    border-radius:6px; padding:12px 0; text-align:center;
+    box-shadow:0 2px 0 var(--red-dark); transition:transform .08s, box-shadow .08s;
+  }
+  .cta:active{transform:translateY(2px); box-shadow:none}
+  .cta.ghost{background:#fff; color:var(--red); border:1.5px solid var(--red); box-shadow:0 2px 0 #F3C9D4}
+
+  /* ── 下部タブ ───────────────────────────────── */
+  .tabbar{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:60;
+    width:100%; max-width:480px;
+    background:#fff; border-top:1px solid var(--line);
+    display:grid; grid-template-columns:repeat(4,1fr);
+    padding-bottom:var(--safe);
+  }
+  .tabbar button{
+    padding:7px 0 8px; display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-size:10.5px; font-weight:700; color:var(--sub);
+  }
+  .tabbar button.on{color:var(--red)}
+  .tabbar svg{width:21px; height:21px; display:block}
+
+  /* ── トースト ───────────────────────────────── */
+  #toast{
+    position:fixed; left:50%; bottom:calc(78px + var(--safe)); transform:translateX(-50%) translateY(8px);
+    background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700;
+    padding:10px 18px; border-radius:999px; z-index:100;
+    opacity:0; pointer-events:none; transition:opacity .22s, transform .22s;
+    white-space:nowrap;
+  }
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  /* ── 注記（プロトタイプの断り） ─────────────── */
+  .proto{
+    margin:22px 10px 8px; padding:13px 14px; border-radius:10px;
+    background:rgba(255,255,255,.72); border:1px dashed #D9A63E;
+    font-size:11.5px; line-height:1.8; color:#6B4A16;
+  }
+  .proto b{color:#7A2A00}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important; scroll-behavior:auto !important}
+  }
+</style>
+
+<div id="app">
+  <header class="hd">
+    <div class="logo">
+      <svg viewBox="0 0 132 30" aria-label="DOPA">
+        <text x="0" y="23"
+              style="font:italic 900 25px 'Arial Black',sans-serif; fill:#EC1E4E;
+                     letter-spacing:-1px;">DOPA</text>
+        <path d="M112 5 L124 5 L117 15 L124 15 L110 27 L114 17 L107 17 Z" fill="#F5B920"/>
+      </svg>
+    </div>
+    <div class="hd-btns">
+      <button class="btn-line" data-toast="登入功能為串接後開放">登入</button>
+      <button class="btn-fill" data-toast="註冊功能為串接後開放">註冊會員</button>
+    </div>
+  </header>
+
+  <section class="carousel">
+    <div class="track" id="track"></div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <nav class="cats" id="cats"></nav>
+
+  <div class="wins" id="wins"></div>
+
+  <div class="filter" id="filter"></div>
+
+  <p class="lead">🚀 註冊會員限定！現在最超值的抽卡 🚀</p>
+
+  <ul class="list" id="list"></ul>
+
+  <div class="proto">
+    <b>這是版型原型（Prototype）。</b><br>
+    卡包縮圖、商品名稱、價格與中獎紀錄皆為示意資料，尚未串接後端。<br>
+    正式版需要另行處理：金流（台灣在地支付）、會員驗證、抽卡機率的公開揭露、
+    以及依台灣法規的定型化契約與退換貨說明。
+  </div>
+</div>
+
+<nav class="tabbar" id="tabbar"></nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ── 表示データ（後でAPIに差し替える） ───────────────── */
+  const BANNERS = [
+    { t:"新用戶限定　首購最高 90% OFF", s:"註冊即送體驗點數", c:"linear-gradient(115deg,#FF2E63,#FF8A00)" },
+    { t:"累計用戶突破 150 萬", s:"感謝祭・加碼抽卡開跑", c:"linear-gradient(115deg,#7B2FF7,#F107A3)" },
+    { t:"每日 0 點　新卡包上架", s:"熱門卡種天天補貨", c:"linear-gradient(115deg,#0F9B8E,#1FC8DB)" }
+  ];
+
+  const CATS = ["快報","寶可夢","海賊王","遊戲王","七龍珠","Weiss","MTG","玩具","食品","服飾","其他"];
+
+  const WINS = [
+    { n:"阿哲", g:"S獎", t:"27 分鐘前", hi:true,  c:"linear-gradient(145deg,#FFE9A0,#E8A800 55%,#FFF3C4)" },
+    { n:"小雅", g:"S獎", t:"1 小時前",  hi:true,  c:"linear-gradient(145deg,#8ED0FF,#2E6FD0 55%,#8ED0FF)" },
+    { n:"Kevin", g:"A獎", t:"1 小時前", hi:false, c:"linear-gradient(145deg,#C7B6FF,#6D3FD0 55%,#C7B6FF)" },
+    { n:"婷婷", g:"A獎", t:"2 小時前",  hi:false, c:"linear-gradient(145deg,#FFB0C8,#D0246F 55%,#FFB0C8)" },
+    { n:"阿翔", g:"S獎", t:"3 小時前",  hi:true,  c:"linear-gradient(145deg,#A8F0C6,#12945E 55%,#A8F0C6)" }
+  ];
+
+  const CHIPS = ["最新","新演出","新彈","熱門","加碼","最低保證","低單價","高單價"];
+
+  const GACHAS = [
+    { heat:null, tags:[], corner:"未註冊<br>限定", ttl:"現在限定　超高返還",
+      sub:"1/10 機率必中 2000PT 以上", was:2000, now:0, per:"1 次", left:[5,5],
+      cta:"抽 1 次", ghost:false, bg:"linear-gradient(140deg,#B8860B,#FFD700 40%,#FF8C00 70%,#8B0000)" },
+    { heat:125, tags:["熱門","加碼","低單價"], corner:"每人<br>限 1 次", ttl:"風暴綠寶石　原價購入",
+      sub:"註冊起 24 小時限定・抽選券不會失效", was:null, now:1, per:"1 次", left:null,
+      cta:"註冊會員後抽卡", ghost:false, bg:"linear-gradient(140deg,#1B6B3A,#48D97A 45%,#0E4D8B)" },
+    { heat:124, tags:["熱門","加碼","低單價"], corner:"每人<br>限 1 次", ttl:"30th CELEBRATION",
+      sub:"1 箱【未拆封】抽選販售・可用原價入手", was:null, now:1, per:"1 次", left:null,
+      cta:"註冊會員後抽卡", ghost:false, bg:"linear-gradient(140deg,#C41E3A,#FF9E2C 45%,#7A1FA2)" },
+    { heat:100, tags:["熱門","加碼","低單價"], corner:"最低保證<br>50PT", ttl:"3.5 週年　BIG CHANCE",
+      sub:"1/10・1/100・1/1000 連抽！10 連以上推薦", was:null, now:50, per:"1 次", left:null,
+      cta:"註冊會員後抽卡", ghost:false, limit:"有抽卡次數限制", chance:"🔥 還可以挑戰 1 次！",
+      bg:"linear-gradient(140deg,#FF6A00,#FFD24A 45%,#D62828)" },
+    { heat:12,  tags:["加碼","高單價"], corner:"每人<br>限 1 次", ttl:"累計用戶 150 萬突破",
+      sub:"必出 11000PT 以上！錯過不再", was:null, now:10000, per:"1 次", left:null,
+      cta:"註冊會員後抽卡", ghost:false, bg:"linear-gradient(140deg,#0A2E6E,#2E86FF 45%,#00C2A8)" },
+    { heat:113, tags:["熱門","加碼","低單價"], corner:"每人<br>限 1 次", ttl:"伊布英雄　1 箱未拆",
+      sub:"註冊起 24 小時限定・原價入手機會", was:null, now:1, per:"1 次", left:null,
+      cta:"註冊會員後抽卡", ghost:true, bg:"linear-gradient(140deg,#8B5A00,#FFC93C 45%,#3B7D2B)" }
+  ];
+
+  const TABS = [
+    { k:"list",  label:"抽卡列表", d:"M4 5h16M4 12h16M4 19h10" },
+    { k:"news",  label:"快報",     d:"M4 6h10v12H4z M14 9h6v9h-6z" },
+    { k:"rank",  label:"排行榜",   d:"M6 20V10M12 20V4M18 20v-7" },
+    { k:"win",   label:"中獎紀錄", d:"M8 4h8v5a4 4 0 01-8 0zM12 13v5M8 21h8" }
+  ];
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+  /* ── バナー ───────────────────────────────── */
+  const track = $("#track"), dots = $("#dots");
+  track.innerHTML = BANNERS.map(b =>
+    `<div class="slide" style="background:${b.c}"><div><b>${esc(b.t)}</b><small>${esc(b.s)}</small></div></div>`
+  ).join("");
+  dots.innerHTML = BANNERS.map((_, i) => `<i class="${i ? "" : "on"}"></i>`).join("");
+  track.addEventListener("scroll", () => {
+    const i = Math.round(track.scrollLeft / track.clientWidth);
+    [...dots.children].forEach((d, j) => d.classList.toggle("on", i === j));
+  }, { passive:true });
+
+  /* ── カテゴリ ─────────────────────────────── */
+  $("#cats").innerHTML = CATS.map((c, i) =>
+    `<button class="${i === 1 ? "on" : ""}${c === "快報" ? " live" : ""}">${esc(c)}</button>`
+  ).join("");
+  $("#cats").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...$("#cats").children].forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    toast(`已切換至「${b.textContent}」`);
+  });
+
+  /* ── 中獎快報 ─────────────────────────────── */
+  $("#wins").innerHTML = WINS.map(w => `
+    <div class="win">
+      <div class="mini" style="background:${w.c}"></div>
+      <div class="txt">
+        ${w.hi ? '<span class="badge">超高額中獎</span>' : ""}
+        <div class="nm">${esc(w.n)}</div>
+        <div class="tm"><b>${esc(w.g)}</b>${esc(w.t)}</div>
+      </div>
+    </div>`).join("");
+
+  /* ── フィルタ ─────────────────────────────── */
+  $("#filter").innerHTML =
+    `<span class="count"><b>238</b> 件販售中</span>` +
+    CHIPS.map(c => `<button class="chip">${esc(c)}</button>`).join("");
+  $("#filter").addEventListener("click", e => {
+    const c = e.target.closest(".chip"); if (!c) return;
+    c.classList.toggle("on");
+    const on = [...$("#filter").querySelectorAll(".chip.on")].map(x => x.textContent);
+    toast(on.length ? `篩選：${on.join("・")}` : "已清除篩選");
+  });
+
+  /* ── 抽卡カード ───────────────────────────── */
+  $("#list").innerHTML = GACHAS.map(g => {
+    const meta = (g.heat || g.tags.length) ? `
+      <div class="meta">
+        ${g.heat ? `<span class="heat">⚡${g.heat} 人</span>` : ""}
+        ${g.tags.map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+      </div>` : "";
+    const price = `
+      <div class="price">
+        <span class="coin"></span>
+        ${g.was ? `<span class="was">${g.was.toLocaleString()}</span>` : ""}
+        <span class="now${g.now === 0 ? " free" : ""}">${g.now.toLocaleString()}<span class="per">PT</span></span>
+        <span class="per">／${esc(g.per)}</span>
+        ${g.left ? `<span class="left">剩餘 <b>${g.left[0]}/${g.left[1]}</b></span>` : ""}
+      </div>`;
+    const note = (g.limit || g.chance) ? `
+      <div class="note">
+        ${g.limit  ? `<span class="lim">${esc(g.limit)}</span>` : ""}
+        ${g.chance ? `<span class="chance">${esc(g.chance)}</span>` : ""}
+      </div>` : "";
+    return `<li class="g">
+      ${meta}
+      <div class="thumb" style="background:${g.bg}">
+        ${g.corner ? `<span class="corner">${g.corner}</span>` : ""}
+        <div>
+          <div class="ttl">${esc(g.ttl)}</div>
+          <div class="sub">${esc(g.sub)}</div>
+        </div>
+      </div>
+      ${price}${note}
+      <button class="cta${g.ghost ? " ghost" : ""}">${esc(g.cta)}</button>
+    </li>`;
+  }).join("");
+  $("#list").addEventListener("click", e => {
+    if (e.target.closest(".cta")) toast("請先註冊會員（原型未串接）");
+  });
+
+  /* ── 下部タブ ─────────────────────────────── */
+  $("#tabbar").innerHTML = TABS.map((t, i) => `
+    <button class="${i ? "" : "on"}" data-k="${t.k}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${t.d}"/></svg>
+      ${esc(t.label)}
+    </button>`).join("");
+  $("#tabbar").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    [...$("#tabbar").children].forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    if (b.dataset.k !== "list") toast("此頁面尚未建置");
+    else window.scrollTo({ top:0, behavior:"smooth" });
+  });
+
+  /* ── トースト ─────────────────────────────── */
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 1900);
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-toast]");
+    if (b) toast(b.dataset.toast);
+  });
+})();
+</script>
+</body></html>
