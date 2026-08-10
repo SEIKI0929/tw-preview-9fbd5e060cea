@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ガチャ演出 10秒</title>
+</head><body>
+<style>
+  /* ─────────────────────────────────────────────
+     単一テーマ（暗いアーケード筐体の中）にコミット。
+     配色  焦げ黒 #0B0603 / 炎 #FF3A00→#FFC400→#FFF4B0
+           確定赤 #E8102A / 昇格緑 #38FF86 / 金 #FFD24A
+     書体  数字とロゴ = 極太イタリック（Arial Black系）を
+           SVG stroke で縁取り。本文 = ヒラギノ角ゴ。
+     ───────────────────────────────────────────── */
+  :root{
+    --ink:#0B0603;
+    --fire1:#FF3A00; --fire2:#FFC400; --fire3:#FFF4B0;
+    --red:#E8102A; --green:#38FF86; --gold:#FFD24A;
+    --smoke:#8A7A70;              /* 焦げ寄りのニュートラル */
+    --disp:italic 900 1em/1 "Arial Black","Arial Bold","Hiragino Sans","Yu Gothic",sans-serif;
+    --body:600 1em/1.6 "Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:#000; color:#fff;
+    font:var(--body);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #stage{
+    position:relative; overflow:hidden;
+    aspect-ratio:9/16;
+    height:100dvh; max-width:100vw;
+    background:var(--ink);
+    box-shadow:0 0 0 1px #241610, 0 30px 90px -20px #000;
+    user-select:none; touch-action:manipulation;
+  }
+  #stage canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+  #fire{z-index:1}
+  #fxb {z-index:2}
+  #fxf {z-index:7; pointer-events:none}   /* 暗幕より上：予兆とマークの雨 */
+
+  .layer{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none}
+
+  /* ── 舞い散るカード（導入） ───────────────── */
+  #deck{z-index:3; perspective:900px}
+  .flycard{
+    position:absolute; width:22%; aspect-ratio:5/7; border-radius:6px;
+    background:linear-gradient(150deg,#fdfdff 0%,#dfe7f2 45%,#fbfbff 100%);
+    border:2px solid #fff;
+    box-shadow:0 6px 20px rgba(0,0,0,.55);
+    opacity:0;
+  }
+  .flycard::after{
+    content:""; position:absolute; inset:8%;
+    border-radius:3px; opacity:.9;
+    background:conic-gradient(from 0deg,#ff3ea5,#ffd24a,#38ff86,#3ea5ff,#ff3ea5);
+    mix-blend-mode:screen; filter:blur(1px);
+  }
+
+  /* ── タイトル ───────────────────────────── */
+  #title{z-index:4; opacity:0}
+  #title .wrap{text-align:center; transform:skewX(-8deg)}
+  #title svg{width:78vmin; max-width:86%; height:auto; filter:drop-shadow(0 6px 0 #4a0d00)}
+  #title .sub{
+    margin-top:2.4vmin; display:inline-block;
+    font:800 clamp(13px,3.1vmin,26px)/1 "Hiragino Sans",sans-serif;
+    letter-spacing:.08em; color:#fff;
+    background:linear-gradient(#1b0d05,#3a1a06);
+    border:1px solid #7a4212; padding:.7em 1.1em; border-radius:2px;
+    text-shadow:0 2px 0 #000;
+  }
+
+  /* ── カウントダウンのカード ─────────────── */
+  #counter{z-index:4; perspective:1200px}
+  #card{
+    position:relative; width:64%; aspect-ratio:5/7;
+    border-radius:2.2vmin; opacity:0;
+    background:
+      repeating-linear-gradient(60deg,rgba(120,150,190,.10) 0 6px,transparent 6px 13px),
+      linear-gradient(160deg,#ffffff 0%,#d9e3f0 50%,#ffffff 100%);
+    border:.9vmin solid #fff;
+    box-shadow:0 0 0 .35vmin #9fb4cc, 0 1.6vmin 5vmin rgba(0,0,0,.6),
+               inset 0 -6vmin 8vmin rgba(255,110,0,.45),   /* 炎の照り返し */
+               inset 0 4vmin 6vmin rgba(120,20,0,.18);
+    display:grid; place-items:center;
+    transform-style:preserve-3d;
+  }
+  #card svg{width:98%; height:98%}
+  .numtext{
+    font:var(--disp); font-size:150px;
+    fill:var(--red); stroke:#120704; stroke-width:15; paint-order:stroke;
+    stroke-linejoin:round;
+  }
+
+  /* ── 昇格テキスト（金→虹） ──────────────── */
+  #shout{z-index:9; opacity:0}
+  #shout .t{
+    font:var(--disp); font-size:clamp(44px,15vmin,124px);
+    letter-spacing:-.02em; text-align:center;
+    transform:skewX(-10deg);
+    color:#fff;
+    padding:.35em 1.2em;
+    background:linear-gradient(90deg,transparent,rgba(0,0,0,.6) 18%,rgba(0,0,0,.6) 82%,transparent);
+    text-shadow:
+      0 0 2.4vmin currentColor,
+      .55vmin .55vmin 0 #120704, -.55vmin -.55vmin 0 #120704,
+      .55vmin -.55vmin 0 #120704, -.55vmin .55vmin 0 #120704,
+      .55vmin 0 0 #120704, -.55vmin 0 0 #120704,
+      0 .55vmin 0 #120704, 0 -.55vmin 0 #120704;
+  }
+
+  /* ── 当たりカード ───────────────────────── */
+  #prize{z-index:5; opacity:0; perspective:1000px}
+  #prizecard{
+    position:relative; width:62%; aspect-ratio:5/7; border-radius:2.4vmin;
+    background:linear-gradient(150deg,#fff 0%,#e8eef8 40%,#fff 100%);
+    border:1vmin solid #fff;
+    box-shadow:0 0 6vmin rgba(255,255,255,.85), 0 0 0 .4vmin #ffd24a, 0 2vmin 6vmin rgba(0,0,0,.6);
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  #prizecard .holo{
+    position:absolute; inset:0; opacity:.55; mix-blend-mode:screen;
+    background:
+      linear-gradient(115deg,transparent 30%,rgba(255,255,255,.9) 46%,transparent 58%),
+      conic-gradient(from 200deg at 40% 30%,#ff3ea5,#ffd24a,#38ff86,#3ea5ff,#b23eff,#ff3ea5);
+    filter:saturate(1.4);
+  }
+  #prizecard .stars{
+    position:relative; padding:1.4vmin 0 .4vmin; text-align:center;
+    font-size:clamp(11px,2.9vmin,24px); color:#ffb400;
+    text-shadow:0 1px 0 #7a4212; letter-spacing:.14em;
+  }
+  /* ↓ この .art の中身が、実際のカード絵に差し替わる場所 */
+  #prizecard .art{
+    position:relative; flex:1; margin:.6vmin 1.4vmin;
+    border-radius:1vmin; overflow:hidden;
+    display:grid; place-items:center;
+    background:
+      repeating-conic-gradient(from 0deg at 50% 42%,
+        rgba(255,255,255,.13) 0deg 3.5deg, transparent 3.5deg 9deg),
+      radial-gradient(90% 60% at 50% 42%,#a24aff 0%,#5a1fb0 35%,#200b48 68%,#0d0620 100%);
+  }
+  #prizecard .art::before{
+    content:""; position:absolute; width:52%; aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(circle,#fff 0%,rgba(255,214,120,.85) 30%,rgba(178,62,255,0) 70%);
+    filter:blur(2px); opacity:.9;
+  }
+  #prizecard .rank{
+    position:relative; font:var(--disp); font-size:clamp(30px,9.5vmin,80px);
+    color:#fff; transform:skewX(-9deg);
+    text-shadow:0 0 3vmin #b23eff, .35vmin .35vmin 0 #3a0d5e, -.35vmin -.35vmin 0 #3a0d5e;
+  }
+  #prizecard .name{
+    position:relative; text-align:center; padding:.9vmin 0 1.6vmin;
+    font:800 clamp(11px,2.7vmin,22px)/1 "Hiragino Sans",sans-serif;
+    color:#241008; letter-spacing:.06em;
+  }
+
+  /* ── フラッシュ / 暗幕 ──────────────────── */
+  #flash{position:absolute; inset:0; z-index:8; background:#fff; opacity:0; pointer-events:none}
+  #veil {position:absolute; inset:0; z-index:6; background:#000; opacity:0; pointer-events:none}
+
+  /* ── UI ─────────────────────────────────── */
+  #ui{
+    position:absolute; inset:0; z-index:10;
+    display:grid; place-items:center; gap:2vmin;
+    background:radial-gradient(70% 50% at 50% 50%,rgba(30,12,4,.35),rgba(0,0,0,.85));
+  }
+  button{
+    font:800 clamp(14px,3.4vmin,22px)/1 "Hiragino Sans",sans-serif;
+    letter-spacing:.1em; color:#2a0f00; cursor:pointer;
+    padding:1.1em 2.4em; border:none; border-radius:100px;
+    background:linear-gradient(#ffe9a8,#ffb400 60%,#e08a00);
+    box-shadow:0 .6vmin 0 #8a4c00, 0 2vmin 4vmin rgba(255,150,0,.35);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  button:active{transform:translateY(.5vmin); box-shadow:0 .1vmin 0 #8a4c00}
+  button:focus-visible{outline:3px solid #38ff86; outline-offset:4px}
+  #ui .hint{
+    font:600 clamp(11px,2.5vmin,15px)/1.7 "Hiragino Sans",sans-serif;
+    color:var(--smoke); text-align:center; max-width:76%;
+  }
+  #ui code{
+    font:700 .92em ui-monospace,SFMono-Regular,Menlo,monospace;
+    background:rgba(255,255,255,.12); color:#FFD24A; padding:.1em .4em; border-radius:3px;
+  }
+  #ui .demo-t{
+    margin:0; font:700 clamp(12px,2.9vmin,17px)/1.6 "Hiragino Sans",sans-serif;
+    color:#F3E7D8; text-align:center;
+  }
+  .demo-btns{display:flex; flex-direction:column; gap:1.4vmin; width:min(78%,340px)}
+  button.demo{
+    display:flex; flex-direction:column; align-items:center; gap:.2em;
+    padding:1.15em 1em; border-radius:10px; color:#2a0f00;
+    background:linear-gradient(#ffe9a8,#ffb400 60%,#e08a00);
+    box-shadow:0 .5vmin 0 #8a4c00;
+  }
+  button.demo b{font:800 clamp(14px,3.4vmin,20px)/1 ui-monospace,Menlo,monospace; letter-spacing:.04em}
+  button.demo small{font:700 clamp(10px,2.2vmin,13px)/1 "Hiragino Sans",sans-serif; opacity:.75}
+  button.demo:active{transform:translateY(.5vmin); box-shadow:none}
+  /* ── C4（結果表示）のスタブ ─────────────────────
+     演出担当の領域。100件のグリッドに耐えることだけ示している。 */
+  #result{
+    position:absolute; inset:0; z-index:11; display:flex; flex-direction:column;
+    background:linear-gradient(180deg,rgba(12,6,2,.82),rgba(12,6,2,.96));
+    padding:5vmin 4vmin calc(4vmin + env(safe-area-inset-bottom,0px));
+    opacity:0; pointer-events:none; transition:opacity .35s ease;
+  }
+  #result.on{opacity:1; pointer-events:auto}
+  .rhead{
+    margin:0 0 2vmin; text-align:center; color:#fff;
+    font:800 clamp(14px,3.4vmin,20px)/1.4 "Hiragino Sans",sans-serif;
+  }
+  .rhead b{color:var(--gold); font-size:1.5em; font-variant-numeric:tabular-nums}
+  .rgrid{
+    flex:1; min-height:0;              /* これが無いと100件でセルが潰れる */
+    overflow-y:auto; display:grid; gap:1.4vmin;
+    grid-template-columns:repeat(auto-fill,minmax(clamp(52px,13vmin,84px),1fr));
+    grid-auto-rows:max-content;        /* 行の高さは内容基準。親に引き伸ばさない */
+    align-content:start; padding:1vmin; margin-bottom:2vmin;
+  }
+  .rgrid .c{
+    aspect-ratio:5/7; border-radius:4px; position:relative; overflow:hidden;
+    background:linear-gradient(150deg,#fff,#dfe7f2 55%,#fff);
+    box-shadow:0 1px 4px rgba(0,0,0,.5);
+    display:grid; place-items:center;
+  }
+  .rgrid .c img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+  .rgrid .c .rk{
+    position:relative; font:900 clamp(11px,2.6vmin,16px)/1 "Arial Black",sans-serif;
+    color:#3a1a6e;
+  }
+  .rgrid .c[data-rank="S"]{box-shadow:0 0 0 2px var(--gold), 0 2px 8px rgba(255,180,0,.6)}
+  .rgrid .c[data-rank="A"]{box-shadow:0 0 0 2px #38FF86}
+  .rbtns{display:flex; flex-wrap:wrap; gap:1.4vmin; justify-content:center}
+  button.rb{
+    font:800 clamp(11px,2.6vmin,15px)/1 "Hiragino Sans",sans-serif;
+    padding:1em 1.5em; border-radius:999px; color:#F3E7D8;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+  }
+  button.rb.primary{
+    color:#2a0f00; border:none;
+    background:linear-gradient(#ffe9a8,#ffb400 60%,#e08a00);
+    box-shadow:0 .4vmin 0 #8a4c00;
+  }
+  button.rb:active{transform:translateY(.3vmin)}
+  .hidden{display:none !important}
+</style>
+
+<div id="stage">
+  <canvas id="fire"></canvas>
+  <canvas id="fxb"></canvas>
+
+  <div class="layer" id="deck"></div>
+
+  <div class="layer" id="title">
+    <div class="wrap">
+      <svg viewBox="0 0 600 200" aria-label="チャレンジガチャ">
+        <defs>
+          <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#fff8d6"/>
+            <stop offset="45%" stop-color="#ffd24a"/>
+            <stop offset="47%" stop-color="#ff7a00"/>
+            <stop offset="100%" stop-color="#ffe08a"/>
+          </linearGradient>
+          <linearGradient id="tg2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"  stop-color="#eaf4ff"/>
+            <stop offset="50%" stop-color="#4aa8ff"/>
+            <stop offset="52%" stop-color="#1b5fd0"/>
+            <stop offset="100%" stop-color="#9fd4ff"/>
+          </linearGradient>
+        </defs>
+        <text x="300" y="88" text-anchor="middle"
+              style="font:italic 900 92px 'Arial Black',sans-serif; fill:url(#tg);
+                     stroke:#3d1500; stroke-width:11; paint-order:stroke; stroke-linejoin:round;">CHALLENGE</text>
+        <text x="300" y="170" text-anchor="middle"
+              style="font:italic 900 74px 'Hiragino Sans',sans-serif; fill:url(#tg2);
+                     stroke:#06213f; stroke-width:11; paint-order:stroke; stroke-linejoin:round;">ガチャ</text>
+      </svg>
+      <div class="sub">カウント成功で激アツ確定！？</div>
+    </div>
+  </div>
+
+  <div class="layer" id="counter">
+    <div id="card">
+      <svg viewBox="0 0 200 200">
+        <text id="num" class="numtext" x="100" y="155" text-anchor="middle"
+              transform="rotate(-7 100 110)">3</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="layer" id="prize">
+    <div id="prizecard">
+      <div class="holo"></div>
+      <div class="stars">★★★★★</div>
+      <div class="art"><div class="rank">SSR</div></div>
+      <div class="name">虹 レア ／ 排出率 0.4%</div>
+    </div>
+  </div>
+
+  <canvas id="fxf"></canvas>
+  <div id="veil"></div>
+  <div id="flash"></div>
+  <div class="layer" id="shout"><div class="t"></div></div>
+
+  <!-- C4：結果表示。ここも演出担当の領域なので、これは形を示すだけのスタブ -->
+  <div id="result">
+    <p class="rhead">獲得 <b id="rcount">1</b> 件</p>
+    <div class="rgrid" id="rgrid"></div>
+    <div class="rbtns">
+      <button class="rb primary" data-next="again" data-count="1">もう一度</button>
+      <button class="rb primary" data-next="again" data-count="10">10連</button>
+      <button class="rb primary" data-next="again" data-count="100">100連</button>
+      <button class="rb" data-next="holdings">保有を見る</button>
+      <button class="rb" data-next="close">閉じる</button>
+    </div>
+  </div>
+
+  <div id="ui">
+    <p class="demo-t">箱から渡された <code>effectTier</code> で<br>昇格の止まる位置が変わります</p>
+    <div class="demo-btns">
+      <button class="demo" data-tier="gold"><b>gold</b><small>金どまり／9.3秒</small></button>
+      <button class="demo" data-tier="green"><b>green</b><small>緑へ昇格／9.9秒</small></button>
+      <button class="demo" data-tier="rainbow"><b>rainbow</b><small>虹確定／10.2秒</small></button>
+    </div>
+    <p class="hint">音が出ます。再生中は Esc で <code>skip()</code>。<br>
+      光の点滅が苦手な方はOS側の「視差を減らす」をオンにすると弱まります。</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const TAU = Math.PI * 2;
+  const softMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  /* 制作時の確認用パラメータ（本番では付けない）
+     ?seek=6500          … その時刻のフレームで静止
+     ?rate=12&hold=8000  … 12倍速で通し再生し、8000ms相当で停止 */
+  const Q = new URLSearchParams(location.search);
+  const SEEK = Q.get("seek");
+  const RATE = Number(Q.get("rate") || 1);
+  const HOLD = Q.has("hold") ? Number(Q.get("hold")) : null;
+  let seekFrames = 0, vtime = 0;
+  const FLASH_MAX = softMotion ? 0.35 : 1;      // 光過敏への配慮
+
+  const stage = document.getElementById("stage");
+  const fire  = document.getElementById("fire");
+  const fxb   = document.getElementById("fxb");
+  const fxf   = document.getElementById("fxf");
+  const deck  = document.getElementById("deck");
+  const titleEl = document.getElementById("title");
+  const counter = document.getElementById("counter");
+  const cardEl  = document.getElementById("card");
+  const numEl   = document.getElementById("num");
+  const prize   = document.getElementById("prize");
+  const prizecard = document.getElementById("prizecard");
+  const shout   = document.getElementById("shout");
+  const shoutT  = shout.querySelector(".t");
+  const flash   = document.getElementById("flash");
+  const veil    = document.getElementById("veil");
+  const ui      = document.getElementById("ui");
+  const resultEl = document.getElementById("result");
+
+  const fireCtx = fire.getContext("2d");
+  const bCtx    = fxb.getContext("2d");
+  const fCtx    = fxf.getContext("2d");
+
+  let W = 0, H = 0, DPR = 1;
+  function resize(){
+    const r = stage.getBoundingClientRect();
+    DPR = Math.min(devicePixelRatio || 1, 2);
+    W = r.width; H = r.height;
+    for (const c of [fxb, fxf]) {
+      c.width  = Math.round(W * DPR);
+      c.height = Math.round(H * DPR);
+      c.getContext("2d").setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    // 炎はぼけていて構わないので低解像度で描く（塗りピクセルを1/3以下に）
+    const FS = 0.55;
+    fire.width  = Math.round(W * FS);
+    fire.height = Math.round(H * FS);
+    fireCtx.setTransform(FS, 0, 0, FS, 0, 0);
+    buildGlow();
+  }
+
+  /* ── 炎のスプライト（hue 6段階を事前生成） ───────────── */
+  let GLOW = [];
+  function buildGlow(){
+    GLOW = [];
+    const size = Math.max(24, Math.round(W * 0.16));
+    for (let i = 0; i < 6; i++) {
+      const hue = 8 + i * 8;                    // 8→48deg
+      const cv = document.createElement("canvas");
+      cv.width = cv.height = size;
+      const g = cv.getContext("2d");
+      const grd = g.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+      grd.addColorStop(0,    `hsla(${hue},100%,${52 + i*4}%,1)`);
+      grd.addColorStop(0.35, `hsla(${hue},100%,42%,.5)`);
+      grd.addColorStop(1,    `hsla(${hue},100%,36%,0)`);
+      g.fillStyle = grd;
+      g.fillRect(0, 0, size, size);
+      GLOW.push(cv);
+    }
+  }
+
+  /* ── 状態 ─────────────────────────────────── */
+  const flames = [];   // 炎の粒
+  const inks   = [];   // 黒インクの飛沫
+  const marks  = [];   // トランプマークの雨
+  let fireLevel = 0;   // 0..1.6 炎の勢い
+  let shake = 0;       // 画面揺れ
+  let running = false, t0 = 0, raf = 0;
+
+  function spawnFlame(n){
+    for (let i = 0; i < n; i++) {
+      const sp = Math.random();                       // 0=遅い(黄) … 1=速い(赤)
+      flames.push({
+        x: Math.random() * W,
+        y: H * (0.9 + Math.random() * 0.25),
+        vx: (Math.random() - 0.5) * 0.7,
+        vy: -(3.6 + sp * 5.4) * (0.7 + fireLevel * 0.5),
+        r: W * (0.12 + Math.random() * 0.18),
+        life: 0,
+        max: 75 + Math.random() * 105,
+        g: Math.min(5, Math.max(0, Math.round((1 - sp) * 5)))
+      });
+    }
+  }
+  function spawnInk(n){
+    for (let i = 0; i < n; i++) {
+      inks.push({
+        x: Math.random() * W,
+        y: H * (1.0 + Math.random() * 0.15),
+        vy: -(5.0 + Math.random() * 7.0),
+        r: W * (0.028 + Math.random() * 0.055),
+        life: 0, max: 95 + Math.random() * 70,
+        seed: Math.random() * 10
+      });
+    }
+  }
+
+  function drawFire(dt){
+    fireCtx.clearRect(0, 0, W, H);
+    if (fireLevel > 0.02) {
+      spawnFlame(Math.round(3 + fireLevel * 5));
+      if (Math.random() < 0.10 + fireLevel * 0.16) spawnInk(1);
+      // 下地の赤熱：画面全体を焼く
+      const g = fireCtx.createLinearGradient(0, H, 0, -H * 0.1);
+      g.addColorStop(0, `rgba(255,120,0,${0.7 * Math.min(1, fireLevel)})`);
+      g.addColorStop(0.5, `rgba(190,26,0,${0.55 * Math.min(1, fireLevel)})`);
+      g.addColorStop(1, `rgba(96,10,0,${0.5 * Math.min(1, fireLevel)})`);
+      fireCtx.fillStyle = g;
+      fireCtx.fillRect(0, 0, W, H);
+    }
+    fireCtx.globalCompositeOperation = "lighter";
+    for (let i = flames.length - 1; i >= 0; i--) {
+      const p = flames[i];
+      p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vy *= 0.995;
+      const k = p.life / p.max;
+      if (k >= 1) { flames.splice(i, 1); continue; }
+      const a = Math.sin(Math.min(1, k) * Math.PI) * 0.85;
+      const r = p.r * (1 - k * 0.42);
+      const hgt = 0.25 + 0.75 * clamp01(p.y / H);        // 上へ行くほど暗く＝赤黒く
+      fireCtx.globalAlpha = a * 0.78 * hgt * Math.min(1, 0.5 + fireLevel * 0.5);
+      fireCtx.drawImage(GLOW[p.g], p.x - r, p.y - r, r * 2, r * 2);
+    }
+    fireCtx.globalAlpha = 1;
+    fireCtx.globalCompositeOperation = "source-over";
+    // 黒インク（DOPA風の斑点）
+    fireCtx.fillStyle = "#0B0603";
+    for (let i = inks.length - 1; i >= 0; i--) {
+      const p = inks[i];
+      p.life += dt; p.y += p.vy * dt;
+      const k = p.life / p.max;
+      if (k >= 1) { inks.splice(i, 1); continue; }
+      const r = p.r * (0.6 + k * 0.7);
+      fireCtx.beginPath();
+      for (let b = 0; b < 4; b++) {
+        const a = p.seed + b * 1.7;
+        fireCtx.moveTo(p.x, p.y);
+        fireCtx.arc(p.x + Math.cos(a) * r * 0.55, p.y + Math.sin(a) * r * 0.4, r * (0.5 + (b % 2) * 0.3), 0, TAU);
+      }
+      fireCtx.fill();
+    }
+  }
+
+  /* ── 集中線・シェブロン ────────────────────── */
+  function speedLines(ctx, rot, count, color, len, hole){
+    const cx = W / 2, cy = H / 2, R = Math.hypot(W, H);
+    ctx.save(); ctx.fillStyle = color;
+    for (let i = 0; i < count; i++) {
+      const a = rot + (i / count) * TAU;
+      const w = 0.006 + ((i * 37) % 11) / 11 * 0.03;
+      const r0 = R * hole, r1 = R * len;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+      ctx.lineTo(cx + Math.cos(a - w) * r1, cy + Math.sin(a - w) * r1);
+      ctx.lineTo(cx + Math.cos(a + w) * r1, cy + Math.sin(a + w) * r1);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+  function chevron(ctx, cy, w, h, thick, color){
+    const cx = W / 2;
+    ctx.save(); ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx - w, cy - h);
+    ctx.lineTo(cx, cy + h * 0.35);
+    ctx.lineTo(cx + w, cy - h);
+    ctx.lineTo(cx + w - thick, cy - h);
+    ctx.lineTo(cx, cy + h * 0.35 - thick * 1.5);
+    ctx.lineTo(cx - w + thick, cy - h);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  function burstRays(ctx, p, color){
+    const cx = W / 2, cy = H / 2, R = Math.hypot(W, H) * p;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.strokeStyle = color; ctx.lineWidth = W * 0.012 * (1 - p);
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * TAU + p * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * R * 0.15, cy + Math.sin(a) * R * 0.15);
+      ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.lineWidth = W * 0.02 * (1 - p);
+    ctx.arc(cx, cy, R * 0.75, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+
+  const SUITS = ["♠", "♥", "♦", "♣"];
+  function spawnMarks(n){
+    for (let i = 0; i < n; i++) {
+      marks.push({
+        x: Math.random() * W, y: -H * 0.1 - Math.random() * H * 0.5,
+        vy: 1.5 + Math.random() * 3.2,
+        rot: Math.random() * TAU, vr: (Math.random() - 0.5) * 0.06,
+        s: W * (0.035 + Math.random() * 0.06),
+        c: SUITS[(Math.random() * 4) | 0]
+      });
+    }
+  }
+  function drawMarks(dt){
+    fCtx.save();
+    fCtx.textAlign = "center"; fCtx.textBaseline = "middle";
+    for (let i = marks.length - 1; i >= 0; i--) {
+      const m = marks[i];
+      m.y += m.vy * dt; m.rot += m.vr * dt;
+      if (m.y > H * 1.2) { marks.splice(i, 1); continue; }
+      fCtx.save();
+      fCtx.translate(m.x, m.y); fCtx.rotate(m.rot);
+      fCtx.font = `${m.s}px "Hiragino Sans",sans-serif`;
+      fCtx.fillStyle = "rgba(255,255,255,.9)";
+      fCtx.fillText(m.c, 0, 0);
+      fCtx.restore();
+    }
+    fCtx.restore();
+  }
+
+  /* ── 補助 ─────────────────────────────────── */
+  const clamp01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const seg = (t, a, b) => clamp01((t - a) / (b - a));       // 区間内の進行 0..1
+  const inSeg = (t, a, b) => t >= a && t < b;
+  const easeOut = p => 1 - Math.pow(1 - p, 3);
+  const easeIn  = p => p * p * p;
+  const back    = p => { const c = 2.2; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+
+  /* ── 効果音（WebAudio・素材なし） ───────────── */
+  let AC = null;
+  function ac(){ return AC || (AC = new (window.AudioContext || window.webkitAudioContext)()); }
+  function tone(freq, dur, type, vol, slideTo){
+    const c = ac(), o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, c.currentTime);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime + dur);
+    g.gain.setValueAtTime(0, c.currentTime);
+    g.gain.linearRampToValueAtTime(vol, c.currentTime + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + dur + 0.05);
+  }
+  function noise(dur, vol, from, to){
+    const c = ac(), len = Math.ceil(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(from, c.currentTime);
+    f.frequency.exponentialRampToValueAtTime(to, c.currentTime + dur);
+    const g = c.createGain(); g.gain.setValueAtTime(vol, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    src.connect(f).connect(g).connect(c.destination); src.start();
+  }
+  const SFX = {
+    whoosh: () => noise(0.55, 0.35, 5000, 300),
+    beep:   n => tone(520 + n * 90, 0.18, "square", 0.12),
+    last:   () => { tone(880, 0.5, "sawtooth", 0.14, 1760); noise(0.4, 0.2, 3000, 400); },
+    hit:    () => { noise(1.1, 0.5, 9000, 120); tone(70, 0.9, "sine", 0.3, 40); },
+    up:     () => tone(400, 0.7, "triangle", 0.16, 2200),
+    win:    () => { [0, 4, 7, 12].forEach((s, i) =>
+                     setTimeout(() => tone(523.25 * Math.pow(2, s / 12), 0.9, "triangle", 0.13), i * 90)); }
+  };
+
+  /* ── タイムライン（ms） ────────────────────── */
+  /* タイムラインは effectTier で組み替える。
+     箱から渡された tier で昇格をどこで止めるかが決まる（演出側は判断しない）。 */
+  const NEVER = 1e9;
+  const BASE = {
+    fireIn: 0,   cardsIn: 250, title: 1250, titleOut: 2050,
+    c3: 2100,    c2: 2900,     c1: 3700,
+    zoom: 4700,  black: 5100,  burst: 6300
+  };
+  const TIMELINES = {
+    gold:    { ...BASE, green: NEVER, logo: NEVER, reveal: 7200, end: 9300  },
+    green:   { ...BASE, green: 7000,  logo: NEVER, reveal: 7800, end: 9900  },
+    rainbow: { ...BASE, green: 7000,  logo: 7500,  reveal: 8100, end: 10200 }
+  };
+  let T = TIMELINES.rainbow;
+
+  const flyCards = [];
+  function buildDeck(){
+    deck.innerHTML = "";
+    flyCards.length = 0;
+    for (let i = 0; i < 6; i++) {
+      const el = document.createElement("div");
+      el.className = "flycard";
+      deck.appendChild(el);
+      flyCards.push({ el, a: (i / 6) * TAU, d: 0.36 + (i % 3) * 0.09 });
+    }
+  }
+
+  let firedSFX = {};
+  function once(key, fn){ if (!firedSFX[key]) { firedSFX[key] = 1; try { fn(); } catch(e){} } }
+
+  function frame(now){
+    if (!running) return;
+    // 早送り時はフレーム数で時刻を刻む（実時間に依存させない）
+    if (RATE !== 1) vtime += 16.67 * RATE;
+    const t = SEEK !== null ? Number(SEEK) : RATE !== 1 ? vtime : now - t0;
+    const dt = Math.min(3, (now - (frame.prev || now)) / 16.67);
+    frame.prev = now;
+
+    bCtx.clearRect(0, 0, W, H);
+    fCtx.clearRect(0, 0, W, H);
+
+    /* 炎の勢い */
+    if (t < T.zoom)        fireLevel = 0.35 + seg(t, 0, 700) * 0.35 + seg(t, T.c3, T.c1 + 900) * 0.75;
+    else if (t < T.black)  fireLevel = 1.5;
+    else if (t < T.burst)  fireLevel = 0;
+    else if (t < T.reveal) fireLevel = 0;
+    else                   fireLevel = 0;
+    drawFire(dt);
+
+    /* 導入：カードが舞い上がって1枚に収束 */
+    if (t < T.title + 200) {
+      const p = seg(t, T.cardsIn, T.title);
+      for (const c of flyCards) {
+        const e = easeOut(p);
+        const spread = (1 - e) * c.d;
+        const x = 50 + Math.cos(c.a + p * 2.4) * spread * 120;
+        const y = 118 - e * 68 + Math.sin(c.a + p * 2.0) * spread * 40;
+        c.el.style.opacity = String(clamp01(p * 3) * (1 - clamp01((p - 0.75) / 0.25)));
+        c.el.style.transform =
+          `translate(-50%,-50%) translate(${x}%,${y}%) rotateY(${(c.a * 60 + p * 520)}deg) rotate(${(1 - e) * 40 - 20}deg) scale(${0.7 + e * 0.5})`;
+        c.el.style.left = "50%"; c.el.style.top = "50%";
+      }
+      if (p > 0) once("whoosh", SFX.whoosh);
+    } else {
+      deck.style.opacity = "0";
+    }
+
+    /* タイトル */
+    {
+      const inP = seg(t, T.title, T.title + 260);
+      const outP = seg(t, T.titleOut, T.c3);
+      titleEl.style.opacity = String(inP * (1 - outP));
+      const sc = 0.6 + back(inP) * 0.4 + (t > T.titleOut ? outP * 0.5 : 0);
+      titleEl.querySelector(".wrap").style.transform =
+        `skewX(-8deg) scale(${sc}) translateY(${(1 - inP) * -6}vmin)`;
+      if (inP > 0) once("title", () => tone(180, 0.35, "sawtooth", 0.2, 90));
+    }
+
+    /* カウントダウン 3 → 2 → 1 */
+    if (t >= T.c3 && t < T.black) {
+      counter.style.opacity = "1";
+      const steps = [[T.c3, T.c2, "3"], [T.c2, T.c1, "2"], [T.c1, T.zoom, "1"]];
+      let cur = steps[2];
+      for (const s of steps) if (inSeg(t, s[0], s[1])) cur = s;
+      if (numEl.textContent !== cur[2]) numEl.textContent = cur[2];
+      const p = seg(t, cur[0], cur[1]);
+      once("c" + cur[2], () => cur[2] === "1" ? SFX.last() : SFX.beep(3 - Number(cur[2])));
+
+      let sc = 1 + (1 - easeOut(clamp01(p * 4))) * 0.55;
+      let ry = (1 - easeOut(clamp01(p * 3))) * -100;
+      let op = 1;
+      if (t >= T.zoom) {                       // 最後の1枚が眼前まで迫る
+        const z = seg(t, T.zoom, T.black);
+        sc = 1 + easeIn(z) * 6.5;
+        ry = z * 30;
+        op = 1;
+      }
+      const beat = Math.sin(t / 1000 * TAU * 3.2) * 0.02 * (1 + p);
+      cardEl.style.opacity = String(op);
+      cardEl.style.transform = `translateZ(0) rotateY(${ry}deg) scale(${sc + beat}) rotate(${Math.sin(t/220)*1.5}deg)`;
+      shake = 0.4 + p * (cur[2] === "1" ? 3.2 : 1.2);
+    } else if (t >= T.black) {
+      counter.style.opacity = "0";
+      cardEl.style.opacity = "0";
+    }
+
+    /* 白フラッシュ → 完全暗転（最大の溜め） */
+    const fs = T.zoom + 330;                      // 白飛びの入り
+    if (inSeg(t, fs, T.black)) {
+      const p = seg(t, fs, T.black);
+      flash.style.opacity = String((p < 0.4 ? p / 0.4 : 1) * FLASH_MAX);
+      once("flash1", () => noise(0.5, 0.4, 8000, 500));
+    } else if (t < fs) {
+      flash.style.opacity = "0";
+    }
+    if (inSeg(t, T.black, T.burst)) {
+      veil.style.opacity = "1";
+      flash.style.opacity = "0";                  // 白 → 黒へカット
+      shake = 0;
+      const p = seg(t, T.black, T.burst);
+      if (p > 0.42 && p < 0.82) {                 // 暗闇の中の青い予兆
+        const q = (p - 0.42) / 0.40;
+        fCtx.save();                                   // 暗幕より上のレイヤーに描く
+        fCtx.globalCompositeOperation = "lighter";
+        const g = fCtx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W * (0.12 + 0.55 * q));
+        g.addColorStop(0, `rgba(150,205,255,${Math.sin(q * Math.PI) * 0.95})`);
+        g.addColorStop(1, "rgba(0,40,120,0)");
+        fCtx.fillStyle = g; fCtx.fillRect(0, 0, W, H);
+        fCtx.restore();
+        once("omen", () => tone(1400, 0.25, "sine", 0.08, 300));
+      }
+    } else if (t >= T.burst) {
+      veil.style.opacity = "0";
+    }
+
+    /* 突き上げ：金のシェブロン → 緑へ昇格 */
+    if (inSeg(t, T.burst, T.reveal)) {
+      // 金 → 緑（昇格） → 虹（確定）の三段
+      const PH = t < T.green ? 0 : t < T.logo ? 1 : 2;
+      const lineCol = ["rgba(255,168,0,.35)", "rgba(56,255,134,.30)", "rgba(255,255,255,.26)"][PH];
+      const rayCol  = ["#fff0b0", "#9dffc6", "#ffffff"][PH];
+      const mainCol = ["#FFD24A", "#38FF86", "#FFD24A"][PH];
+      const subCol  = ["rgba(255,120,0,.55)", "rgba(56,255,134,.55)", "rgba(178,62,255,.6)"][PH];
+      once("hit", SFX.hit);
+      if (PH >= 1) once("up", SFX.up);
+
+      const p = seg(t, T.burst, T.green);
+      bCtx.fillStyle = "#140800"; bCtx.fillRect(0, 0, W, H);
+      speedLines(bCtx, t / 700, 26, lineCol, 1, 0.06);
+      if (PH === 2) {                                   // 虹段階は色を重ねる
+        const hues = [340, 45, 140, 210];
+        for (let i = 0; i < 4; i++)
+          speedLines(bCtx, t / 700 + i * 0.4, 7, `hsla(${hues[i]},100%,60%,.30)`, 1, 0.06);
+      }
+      burstRays(bCtx, easeOut(clamp01(seg(t, T.burst, T.burst + 500))), rayCol);
+
+      const rise = easeOut(seg(t, T.burst, T.logo));
+      for (let i = 0; i < 3; i++) {
+        const k = clamp01(rise * 1.4 - i * 0.18);
+        if (k <= 0) continue;
+        chevron(bCtx, H * (1.15 - k * 0.72), W * (0.34 + i * 0.16), H * (0.16 + i * 0.05),
+                W * 0.055, i === 0 ? mainCol : subCol);
+      }
+      flash.style.opacity = String(Math.max(0, 1 - seg(t, T.burst, T.burst + 220)) * FLASH_MAX);
+      if (PH === 1) flash.style.opacity = String((1 - seg(t, T.green, T.green + 260)) * 0.85 * FLASH_MAX);
+      if (PH === 2) flash.style.opacity = String((1 - seg(t, T.logo, T.logo + 240)) * 0.7 * FLASH_MAX);
+      shake = 3.5 * (1 - p * 0.6);
+
+      shout.style.opacity = "1";
+      if (PH === 0)      { shoutT.textContent = "激アツ"; shoutT.style.color = "#FFD24A"; }
+      else if (PH === 1) { shoutT.textContent = "昇格！"; shoutT.style.color = "#38FF86"; }
+      else               { shoutT.textContent = "虹 確 定"; shoutT.style.color = "#fff"; }
+      const sp = t < T.green ? seg(t, T.burst, T.burst + 200)
+               : t < T.logo  ? seg(t, T.green, T.green + 180)
+                             : seg(t, T.logo, T.logo + 180);
+      shoutT.style.transform = `skewX(-10deg) scale(${0.7 + back(sp) * 0.35})`;
+    } else if (t < T.burst) {
+      shout.style.opacity = "0";
+    }
+
+    /* 当たりカード出現 */
+    if (t >= T.reveal) {
+      once("win", SFX.win);
+      const p = seg(t, T.reveal, T.reveal + 700);
+      bCtx.fillStyle = "#B00016"; bCtx.fillRect(0, 0, W, H);
+      const g = bCtx.createRadialGradient(W/2, H*0.45, 0, W/2, H*0.45, W * 0.9);
+      g.addColorStop(0, "#FF3B4E"); g.addColorStop(1, "#6B000E");
+      bCtx.fillStyle = g; bCtx.fillRect(0, 0, W, H);
+      speedLines(bCtx, -t / 900, 34, "rgba(255,255,255,.22)", 1, 0.16);
+      speedLines(bCtx, t / 1400, 18, "rgba(255,220,120,.18)", 1, 0.10);
+
+      if (marks.length < 26 && (t - T.reveal) < 1600) spawnMarks(1);
+      drawMarks(dt);
+
+      flash.style.opacity = String(Math.max(0, 1 - seg(t, T.reveal, T.reveal + 320)) * FLASH_MAX);
+      shout.style.opacity = String(1 - seg(t, T.reveal, T.reveal + 250));
+      prize.style.opacity = "1";
+      prizecard.style.transform =
+        `rotateY(${(1 - easeOut(p)) * 200}deg) scale(${0.4 + back(clamp01(p * 1.15)) * 0.62}) rotate(${(1 - p) * 12}deg)`;
+      shake = 2.2 * (1 - clamp01(p * 1.6));
+      if (t > T.reveal + 700) {
+        const f = (t - T.reveal - 700) / 1000;
+        prizecard.style.transform = `rotateY(${Math.sin(f * 2.2) * 10}deg) scale(1.02) rotate(${Math.sin(f * 1.7) * 1.2}deg)`;
+      }
+    }
+
+    /* 画面揺れ */
+    const s = softMotion ? shake * 0.3 : shake;
+    stage.style.transform = s > 0.05
+      ? `translate(${(Math.random() - 0.5) * s}px, ${(Math.random() - 0.5) * s}px)`
+      : "none";
+
+    if (SEEK !== null) {
+      stage.style.transform = "none";
+      if (++seekFrames > 45) { running = false; document.body.dataset.seekReady = "1"; return; }
+    } else if (HOLD !== null && t >= HOLD) {
+      stage.style.transform = "none";
+      running = false;
+      return;
+    } else if (t >= T.end) {
+      finish();
+      return;
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  /* C3 の終わり方は1か所に集約する。ここでは resolve せず C4 を出す。
+     resolve するのは C4 でユーザーが次を選んだとき（done）。 */
+  let resolveFn = null, currentDraw = null;
+  function finish(){
+    cancelAnimationFrame(raf);
+    running = false;
+    stage.style.transform = "none";
+    showResult();
+  }
+
+  function showResult(){
+    const rs = (currentDraw && currentDraw.results) || [];
+    document.getElementById("rcount").textContent = rs.length;
+    const STARS = { S:5, A:4, B:3, C:2, D:1 };
+    document.getElementById("rgrid").innerHTML = rs.map(r => `
+      <div class="c" data-rank="${r.rank || ""}" title="${(r.name || "").replace(/"/g, "")}">
+        ${r.imageUrl ? `<img src="${r.imageUrl}" alt="" onerror="this.remove()">` : ""}
+        <span class="rk">${r.rank || "?"}</span>
+      </div>`).join("");
+    resultEl.classList.add("on");
+  }
+
+  /* どの経路でも必ずここを通す。resolve が漏れると箱が待ち続けて画面が固まる。 */
+  function done(outcome){
+    resultEl.classList.remove("on");
+    if (resolveFn) { const r = resolveFn; resolveFn = null; r(outcome); }
+  }
+
+  function reset(){
+    cancelAnimationFrame(raf);
+    flames.length = 0; inks.length = 0; marks.length = 0;
+    firedSFX = {}; shake = 0; fireLevel = 0; vtime = 0;
+    frame.prev = 0;
+    for (const el of [titleEl, prize, shout]) el.style.opacity = "0";
+    deck.style.opacity = "1";
+    counter.style.opacity = "0"; cardEl.style.opacity = "0";
+    flash.style.opacity = "0"; veil.style.opacity = "0";
+    stage.style.transform = "none";
+    resultEl.classList.remove("on");
+    numEl.textContent = "3";
+    fireCtx.clearRect(0, 0, W, H); bCtx.clearRect(0, 0, W, H); fCtx.clearRect(0, 0, W, H);
+    buildDeck();
+  }
+
+  /* ── 箱から渡された結果を画面へ流し込む ─────────────
+     ここが「演出は結果を決めない」の実装。tier も名前も箱が決めたものを使う。 */
+  function applyResults(draw){
+    const results = draw.results || [];
+    // フル演出で見せる1件は箱が topSeq で指定する。演出側でソートして選ばない
+    const hero = results.find(r => r.seq === draw.topSeq) || results[0] || {};
+    const first = hero;
+    T = TIMELINES[draw.effectTier || first.effectTier] || TIMELINES.rainbow;
+
+    const rankEl = prizecard.querySelector(".rank");
+    const nameEl = prizecard.querySelector(".name");
+    const starEl = prizecard.querySelector(".stars");
+    rankEl.textContent = first.rank || "SSR";
+    nameEl.textContent = first.name || "虹 レア";
+    const STARS = { S:5, A:4, B:3, C:2, D:1 };
+    starEl.textContent = "★".repeat(STARS[first.rank] || 5);
+
+    // 画像が渡されていれば差し込む（無ければ既存のプレースホルダのまま）
+    const art = prizecard.querySelector(".art");
+    const old = art.querySelector("img");
+    if (old) old.remove();
+    if (first.imageUrl) {
+      const img = new Image();
+      img.src = first.imageUrl;
+      img.alt = first.name || "";
+      img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover";
+      img.onerror = () => img.remove();
+      art.appendChild(img);
+    }
+  }
+
+  function play(draw){
+    currentDraw = draw || { results: [] };
+    reset();
+    resultEl.classList.remove("on");
+    applyResults(currentDraw);
+    if (AC && AC.state === "suspended") AC.resume();
+    running = true;
+    t0 = performance.now();
+    raf = requestAnimationFrame(frame);
+    return new Promise(res => { resolveFn = res; });
+  }
+
+  // C3 を飛ばして C4 を出すだけ。ここでは resolve しない（結果を見せずに戻らないため）
+  function skip(){
+    if (running) finish();
+  }
+
+  /* ── 箱が呼ぶのはこの2つだけ ───────────────────────
+     結果を書き換える口は公開しない。 */
+  window.GachaEffect = { play, skip };
+
+  resultEl.addEventListener("click", e => {
+    const b = e.target.closest("button.rb"); if (!b) return;
+    const out = { next: b.dataset.next };
+    if (b.dataset.count) out.count = Number(b.dataset.count);
+    done(out);
+  });
+
+  addEventListener("keydown", e => { if (e.key === "Escape" && running) skip(); });
+
+  /* ── ここから下はデモ用。箱に組み込むときは消してよい ───────── */
+  const HERO = {
+    gold:    { rank:"B", name:"皮卡丘 V",      effectTier:"gold",    isGuaranteed:true  },
+    green:   { rank:"A", name:"噴火龍 ex",     effectTier:"green",   isGuaranteed:false },
+    rainbow: { rank:"S", name:"噴火龍 ex SAR", effectTier:"rainbow", isGuaranteed:false }
+  };
+  const FILLER = ["D","D","C","C","C","B","D","C","B","D"];
+
+  /* 箱が組み立てる draw を模したもの。
+     本番では箱が「最も結果の良かった1件」を選んで topSeq に入れる。
+     ここでは HERO（唯一の上位ランク）を中ほどに置いて、その1件だけがフル演出になることを示す。
+     連数が増えても演出は1回だけ。残りは C4 の一覧に出る。 */
+  function makeDraw(tier, count){
+    const heroSeq = count === 1 ? 1 : Math.min(count, 1 + (count >> 1));
+    const results = Array.from({ length: count }, (_, i) => {
+      const seq = i + 1;
+      if (seq === heroSeq) return { seq, ...HERO[tier] };
+      const rank = FILLER[i % FILLER.length];
+      return { seq, rank, name: `カード ${seq}`, effectTier: "gold", isGuaranteed: false };
+    });
+    return {
+      drawId: "demo", count, effectTier: tier, topSeq: heroSeq, results,
+      context: { balance: 12000, gacha: { id:"g_demo", name:"デモ", pricePerDraw:500, stockLeft:43 } }
+    };
+  }
+
+  let lastTier = "rainbow", lastCount = 1;
+  async function run(tier, count){
+    lastTier = tier; lastCount = count;
+    ui.classList.add("hidden");
+    // 箱側のループを模す。again が返る限り引き直す
+    let out = { next:"again", count };
+    while (out.next === "again") {
+      out = await play(makeDraw(tier, out.count || 1));
+      console.log("play() resolved:", out);
+    }
+    ui.classList.remove("hidden");        // holdings / close はデモでは選択画面へ戻す
+  }
+
+  ui.addEventListener("click", e => {
+    const b = e.target.closest("button.demo"); if (!b) return;
+    ac();                                  // ユーザー操作の中で AudioContext を起こす
+    run(b.dataset.tier, 1);
+  });
+  addEventListener("resize", resize);
+
+  resize();
+  buildDeck();
+  // ?auto=1 は通し再生の確認用（音は鳴らない）
+  // ?tier=gold|green|rainbow を足すと、その段で自動再生する（確認用）
+  const TIER = Q.get("tier");
+  if (SEEK !== null || Q.has("auto") || HOLD !== null || TIER) {
+    const tier = (TIER && HERO[TIER]) ? TIER : "rainbow";
+    const n = Number(Q.get("count") || 1);
+    ui.classList.add("hidden");
+    play(makeDraw(tier, n > 0 ? n : 1));
+  }
+})();
+</script>
+</body></html>
