@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>申請寄送 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* E1 發送申請。3分割設計の③。
+     この画面が7日解除権と正面から向き合う唯一の場所。
+       ・解除権は消せない（消保法19条は強行規定）
+       ・起算点は「商品を受け取った時点」。発送日でも申請日でもない
+       ・告知しないとカウントが始まらず、最長4か月権利が残る
+     したがって「排除する」告知ではなく「権利があることを伝える」告知になる。
+     B1（點數購入）の告知とは中身が逆なので、文面を使い回さないこと。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --coin:#F5B920; --green:#1E7A4D; --blue:#1B5FD0; --blue-bg:#EDF4FF;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(120px + var(--safe)); position:relative}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 8px;
+      display:flex; align-items:center; gap:6px; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .back{padding:10px; display:flex; color:var(--ink)}
+  .hd .ttl{font-size:15px; font-weight:800; flex:1}
+
+  .sec{background:#fff; margin:10px; border-radius:12px; overflow:hidden;
+       box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .sec > h2{margin:0; padding:13px 14px 11px; font-size:14.5px; font-weight:800;
+            border-bottom:1px solid var(--line); display:flex; align-items:center; gap:7px}
+  .sec > h2 .n{font-size:11px; font-weight:800; color:var(--sub); margin-left:auto;
+               font-variant-numeric:tabular-nums}
+
+  .items{display:flex; gap:8px; padding:12px 14px; overflow-x:auto; scrollbar-width:none}
+  .items::-webkit-scrollbar{display:none}
+  .it{flex:0 0 auto; width:64px}
+  .it .art{aspect-ratio:5/7; border-radius:6px; display:grid; place-items:center;
+           background:radial-gradient(90% 60% at 50% 42%,#a24aff,#5a1fb0 40%,#200b48)}
+  .it .rk{font:900 11px/1 "Arial Black",sans-serif; color:#fff; border-radius:3px; padding:4px 5px}
+  .rk.S{background:linear-gradient(#FFD24A,#C98A00); color:#3A2400}
+  .rk.A{background:linear-gradient(#B23EFF,#6D1FB0)}
+  .rk.B{background:linear-gradient(#3EA5FF,#1B5FD0)}
+  .rk.C{background:linear-gradient(#38C87A,#1E7A4D)}
+  .rk.D{background:#B9AFA2}
+  .it .nm{margin-top:4px; font-size:9.5px; font-weight:700; line-height:1.3;
+          display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+
+  .form{padding:6px 14px 14px}
+  .f{margin-top:12px}
+  .f label{display:block; font-size:11.5px; font-weight:800; color:#5E564D; margin-bottom:5px}
+  .f label .req{color:var(--red); margin-left:3px}
+  .f input, .f select, .f textarea{
+    width:100%; font-family:inherit; font-size:14px; color:var(--ink);
+    border:1.5px solid var(--line); border-radius:8px; padding:11px 12px; background:#fff;
+  }
+  .f input:focus, .f select:focus, .f textarea:focus{border-color:var(--red); outline:none}
+  .f textarea{resize:vertical; min-height:62px; line-height:1.6}
+  .f .hint{margin:5px 0 0; font-size:10.5px; color:var(--sub); line-height:1.5}
+  .f2{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+
+  /* 解除権の告知。B1（対象外）とは逆で、こちらは「権利がある」告知 */
+  .notice{margin:10px; border-radius:12px; overflow:hidden;
+          background:var(--blue-bg); border:2px solid #A8C8F0}
+  .notice h2{margin:0; padding:12px 14px 10px; font-size:14px; font-weight:800; color:#14417A;
+             border-bottom:1px solid #C9DDF7; display:flex; align-items:center; gap:7px}
+  .notice .body{padding:12px 14px; font-size:12.5px; line-height:1.9; color:#2E4A70}
+  .notice .body b{color:#14417A}
+  .notice .body p{margin:0 0 8px}
+  .notice .body p:last-child{margin-bottom:0}
+  .notice .agree{display:flex; gap:10px; align-items:flex-start; padding:12px 14px 14px;
+                 border-top:1px solid #C9DDF7; cursor:pointer}
+  .notice .agree input{width:22px; height:22px; flex:0 0 auto; margin:0;
+                       accent-color:var(--blue); cursor:pointer}
+  .notice .agree span{font-size:12.5px; font-weight:800; line-height:1.6; color:#14417A}
+  .notice .ver{padding:0 14px 12px; font-size:10px; color:#5A7BA8; font-variant-numeric:tabular-nums}
+
+  .summary{padding:12px 14px}
+  .row{display:flex; justify-content:space-between; align-items:baseline; padding:6px 0; font-size:13px}
+  .row[hidden]{display:none}
+  .row.total{border-top:1px solid var(--line); margin-top:6px; padding-top:11px;
+             font-size:15px; font-weight:900}
+  .row .v{font-variant-numeric:tabular-nums; font-weight:800}
+  .row.total .v{color:var(--red); font-size:19px}
+  .row .free{color:var(--green)}
+
+  .bottom{position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:60;
+          width:100%; max-width:480px; background:#fff; border-top:1px solid var(--line);
+          padding:10px 12px calc(10px + var(--safe)); box-shadow:0 -3px 12px rgba(120,60,0,.14)}
+  .submit{width:100%; border-radius:9px; padding:14px; text-align:center; color:#fff;
+          font-size:15.5px; font-weight:800; background:var(--red); box-shadow:0 2.5px 0 var(--red-dark)}
+  .submit:active{transform:translateY(2.5px); box-shadow:none}
+  .submit[disabled]{background:#D8D2CA; box-shadow:none; cursor:not-allowed}
+  .note{margin:8px 0 0; font-size:10.5px; color:var(--sub); text-align:center; line-height:1.55}
+
+  #toast{position:fixed; left:50%; bottom:calc(112px + var(--safe));
+         transform:translateX(-50%) translateY(8px);
+         background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700;
+         padding:10px 18px; border-radius:999px; z-index:100; max-width:88%; text-align:center;
+         opacity:0; pointer-events:none; transition:opacity .22s, transform .22s}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  dialog{border:none; border-radius:14px; padding:0; width:min(92vw,420px);
+         box-shadow:0 20px 60px -20px rgba(0,0,0,.5)}
+  dialog::backdrop{background:rgba(20,12,4,.6)}
+  dialog h3{margin:0; padding:16px 18px 12px; font-size:15.5px; border-bottom:1px solid var(--line)}
+  dialog .body{padding:15px 18px; font-size:12.5px; line-height:1.9; color:#4A433B; max-height:56vh; overflow-y:auto}
+  dialog .foot{padding:12px 18px calc(14px + var(--safe)); border-top:1px solid var(--line)}
+  dialog .close{width:100%; background:var(--red); color:#fff; font-weight:800; font-size:14px;
+                border-radius:8px; padding:12px; box-shadow:0 2px 0 var(--red-dark)}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <button class="back" aria-label="返回" onclick="history.back()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="ttl">申請寄送</span>
+  </header>
+
+  <section class="sec">
+    <h2>寄送內容 <span class="n" id="itemN">—</span></h2>
+    <div class="items" id="items"></div>
+  </section>
+
+  <section class="sec">
+    <h2>收件資訊</h2>
+    <div class="form">
+      <div class="f">
+        <label for="name">收件人姓名<span class="req">*</span></label>
+        <input id="name" type="text" autocomplete="name" placeholder="王小明">
+      </div>
+      <div class="f">
+        <label for="tel">手機號碼<span class="req">*</span></label>
+        <input id="tel" type="tel" inputmode="numeric" autocomplete="tel" placeholder="0912345678">
+        <p class="hint">配送通知會以簡訊寄出。</p>
+      </div>
+      <div class="f f2">
+        <div>
+          <label for="zip">郵遞區號<span class="req">*</span></label>
+          <input id="zip" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="100">
+        </div>
+        <div>
+          <label for="city">縣市<span class="req">*</span></label>
+          <select id="city"></select>
+        </div>
+      </div>
+      <div class="f">
+        <label for="addr">地址<span class="req">*</span></label>
+        <textarea id="addr" autocomplete="street-address" placeholder="中正區重慶南路一段122號3樓"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- 解除権の告知（2度目）。B1とは逆で「権利がある」ことを伝える -->
+  <section class="notice">
+    <h2>📦 關於七日解除權（寄送前請確認）</h2>
+    <div class="body">
+      <p>
+        依消費者保護法第19條，您可<b>自收到商品之日起七日內</b>，
+        以退回商品或書面通知方式解除契約，<b>無須說明理由</b>。
+      </p>
+      <p>
+        起算日為<b>您實際收到商品之日</b>，非申請日或出貨日。
+        解除後，卡片將返回本服務，已扣除的寄送手續費將以點數返還。
+      </p>
+      <p>
+        <b>已拆封或已使用的商品，仍在七日內可解除契約</b>，
+        但商品毀損或滅失時，可能須負擔相當之費用。
+      </p>
+    </div>
+    <label class="agree" for="agree">
+      <input type="checkbox" id="agree">
+      <span>我已閱讀並了解上述七日解除權之內容。</span>
+    </label>
+    <p class="ver" id="ver">—</p>
+  </section>
+
+  <section class="sec">
+    <h2>費用</h2>
+    <div class="summary">
+      <div class="row"><span>卡片</span><span class="v" id="sN">—</span></div>
+      <div class="row"><span>寄送手續費</span><span class="v" id="sFee">—</span></div>
+      <div class="row" id="freeRow" hidden><span>免運優惠</span><span class="v free" id="sFree">—</span></div>
+      <div class="row total"><span>合計</span><span class="v" id="sTotal">—</span></div>
+    </div>
+  </section>
+</div>
+
+<div class="bottom">
+  <button class="submit" id="submit" disabled>請填寫收件資訊</button>
+  <p class="note">申請後約 3〜5 個工作天出貨。出貨時會提供追蹤號碼。</p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlg">
+  <h3 id="dlgT">—</h3>
+  <div class="body" id="dlgB"></div>
+  <div class="foot"><button class="close" onclick="document.getElementById('dlg').close()">關閉</button></div>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  const RANK_PT = { S: 8000, A: 2000, B: 400, C: 120, D: 40 };
+  const NAMES = { S:"噴火龍 ex SAR", A:"噴火龍 ex SR", B:"皮卡丘 V", C:"稀有卡", D:"一般卡" };
+
+  const FEE_POINTS = 300;        // 寄送手續費
+  const FREE_FROM  = 10;         // この枚数以上で免運
+
+  const CITIES = ["臺北市","新北市","桃園市","臺中市","臺南市","高雄市","基隆市","新竹市",
+                  "新竹縣","苗栗縣","彰化縣","南投縣","雲林縣","嘉義市","嘉義縣","屏東縣",
+                  "宜蘭縣","花蓮縣","臺東縣","澎湖縣","金門縣","連江縣"];
+
+  // 告知文面の版。B1 とは別の文面なので版も別に持つ
+  const NOTICE_DOC = { version: "ship-v1.0", updated: "2026-08-10" };
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+
+  /* cards.html から ?ids= で渡ってくる。本番はIDでサーバーに問い合わせる。
+     ここでは件数だけを使って表示を組み立てる */
+  const ids = new URLSearchParams(location.search).get("ids");
+  const idList = ids ? ids.split(",").filter(Boolean) : [];
+  const RANKS = ["S","A","B","C","D"];
+  const ITEMS = (idList.length ? idList : ["h0","h1","h2"]).map((id, i) => {
+    const rank = RANKS[Math.min(4, i === 0 ? 0 : 1 + (i % 4))];
+    return { id, rank, name: NAMES[rank], pt: RANK_PT[rank] };
+  });
+
+  $("#ver").textContent = `告知事項 ${NOTICE_DOC.version}（${NOTICE_DOC.updated} 更新）`;
+  $("#city").innerHTML = `<option value="">請選擇</option>` +
+    CITIES.map(c => `<option>${c}</option>`).join("");
+
+  $("#itemN").textContent = `${ITEMS.length} 張`;
+  $("#items").innerHTML = ITEMS.map(it => `
+    <div class="it">
+      <div class="art"><span class="rk ${it.rank}">${it.rank}</span></div>
+      <div class="nm">${esc(it.name)}</div>
+    </div>`).join("");
+
+  const free = ITEMS.length >= FREE_FROM;
+  $("#sN").textContent   = `${ITEMS.length} 張`;
+  $("#sFee").textContent = `${fmt(FEE_POINTS)} PT`;
+  $("#freeRow").hidden   = !free;
+  $("#sFree").textContent = free ? `−${fmt(FEE_POINTS)} PT` : "—";
+  $("#sTotal").textContent = free ? "0 PT" : `${fmt(FEE_POINTS)} PT`;
+
+  const REQUIRED = ["name", "tel", "zip", "city", "addr"];
+
+  function validate(){
+    const filled = REQUIRED.every(id => $("#" + id).value.trim() !== "");
+    const agreed = $("#agree").checked;
+    const btn = $("#submit");
+    btn.disabled = !(filled && agreed);
+    btn.textContent = !filled ? "請填寫收件資訊"
+                   : !agreed ? "請確認七日解除權說明"
+                   : "確認申請寄送";
+  }
+
+  REQUIRED.forEach(id => $("#" + id).addEventListener("input", validate));
+  $("#city").addEventListener("change", validate);
+  $("#agree").addEventListener("change", validate);
+
+  $("#submit").addEventListener("click", () => {
+    if ($("#submit").disabled) return;
+    /* 本番：1トランザクションで
+       1. consent_log を書く（kind=withdrawal_notice, doc_version=ship-v1.0, doc_hash）
+       2. shipment を requested で作る（address_snapshot に住所を凍結）
+       3. shipment_item を件数分
+       4. holding.status を ship_requested へ
+       5. 免運でなければ point_ledger に −FEE_POINTS
+       delivered_at は配送業者の記録から後で埋める。ここが解除権の起算点 */
+    toast(`consent_log(${NOTICE_DOC.version}) → shipment(requested) → ${ITEMS.length}張（原型未串接）`);
+  });
+
+  $(".notice .body").addEventListener("click", () => {
+    $("#dlgT").textContent = "消費者保護法第19條について";
+    $("#dlgB").innerHTML = `
+      <p><b>條文</b></p>
+      <p>通訊交易或訪問交易之消費者，得於<b>收受商品或接受服務後七日內</b>，
+         以退回商品或書面通知方式解除契約，<b>無須說明理由及負擔任何費用或對價</b>。</p>
+      <p><b>起算日</b></p>
+      <p>您<b>實際收到商品之日</b>。申請日・出貨日ではありません。
+         本服務では配送業者の記録をもって受領日とします。</p>
+      <p><b>本告知について</b></p>
+      <p>本說明於申請寄送前提供，並記錄您的確認（版本 ${NOTICE_DOC.version}）。</p>
+      <p><b>點數との違い</b></p>
+      <p>點數（數位內容）は例外規定により七日解除權の対象外ですが、
+         <b>実体カードの寄送は対象</b>です。取り違えのないようご注意ください。</p>`;
+    $("#dlg").showModal();
+  });
+
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 2600);
+  }
+
+  validate();
+})();
+</script>
+</body></html>

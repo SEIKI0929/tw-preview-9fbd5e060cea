@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>登入・註冊 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* A1 註冊 / A2 登入。台湾は LINE の普及率が高いので主導線に置く。
+     註冊時に年齢確認を取る（未成年の課金は争点になりうる）。
+     規約同意は consent_log（kind=purchase_terms とは別の版）に残す前提。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --line-green:#06C755;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0; min-height:100%}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 45%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding:0 0 calc(28px + var(--safe))}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .brand{padding:34px 20px 22px; text-align:center}
+  .brand svg{height:30px; width:auto}
+  .brand p{margin:10px 0 0; font-size:12.5px; font-weight:700; color:#7A3D00}
+
+  .card{background:#fff; margin:0 12px; border-radius:14px; overflow:hidden;
+        box-shadow:0 4px 16px rgba(120,60,0,.2)}
+
+  .tabs{display:flex; border-bottom:1px solid var(--line)}
+  .tabs button{flex:1; padding:15px 0; font-size:14.5px; font-weight:800; color:var(--sub);
+               border-bottom:3px solid transparent}
+  .tabs button.on{color:var(--ink); border-bottom-color:var(--red)}
+
+  .pane{padding:18px 16px 20px}
+  .pane[hidden]{display:none}
+
+  .sso{width:100%; display:flex; align-items:center; justify-content:center; gap:9px;
+       border-radius:9px; padding:14px; font-size:15px; font-weight:800; color:#fff;
+       background:var(--line-green); box-shadow:0 2.5px 0 #04A045}
+  .sso:active{transform:translateY(2.5px); box-shadow:none}
+  .sso .ic{width:22px; height:22px; border-radius:5px; background:#fff; color:var(--line-green);
+           display:grid; place-items:center; font-weight:900; font-size:12px}
+  .ssohint{margin:8px 0 0; font-size:11px; color:var(--sub); text-align:center; line-height:1.6}
+
+  .or{display:flex; align-items:center; gap:10px; margin:18px 0 4px;
+      font-size:11px; font-weight:800; color:var(--sub)}
+  .or::before, .or::after{content:""; flex:1; height:1px; background:var(--line)}
+
+  .f{margin-top:13px}
+  .f label{display:block; font-size:11.5px; font-weight:800; color:#5E564D; margin-bottom:5px}
+  .f label .req{color:var(--red); margin-left:3px}
+  .f .wrap{position:relative}
+  .f input{width:100%; font-family:inherit; font-size:15px; color:var(--ink);
+           border:1.5px solid var(--line); border-radius:8px; padding:12px; background:#fff}
+  .f input:focus{border-color:var(--red); outline:none}
+  .f .eye{position:absolute; right:4px; top:50%; transform:translateY(-50%);
+          padding:9px 11px; font-size:11.5px; font-weight:800; color:var(--sub)}
+  .f .hint{margin:5px 0 0; font-size:10.5px; color:var(--sub); line-height:1.55}
+  .f .err{margin:5px 0 0; font-size:10.5px; color:var(--red); font-weight:800; line-height:1.5}
+  .f input[aria-invalid="true"]{border-color:var(--red)}
+
+  .agree{display:flex; gap:9px; align-items:flex-start; margin-top:15px; cursor:pointer}
+  .agree input{width:20px; height:20px; flex:0 0 auto; margin:1px 0 0;
+               accent-color:var(--red); cursor:pointer}
+  .agree span{font-size:11.5px; font-weight:700; line-height:1.65; color:#4A433B}
+  .agree a{color:var(--red); font-weight:800}
+
+  .submit{width:100%; margin-top:17px; border-radius:9px; padding:14px; text-align:center;
+          color:#fff; font-size:15.5px; font-weight:800;
+          background:var(--red); box-shadow:0 2.5px 0 var(--red-dark)}
+  .submit:active{transform:translateY(2.5px); box-shadow:none}
+  .submit[disabled]{background:#D8D2CA; box-shadow:none; cursor:not-allowed}
+
+  .sub{margin:13px 0 0; text-align:center; font-size:12px; color:var(--sub); font-weight:700}
+  .sub a{color:var(--red); font-weight:800}
+
+  .foot{margin:16px 12px 0; padding:13px 15px; border-radius:11px;
+        background:rgba(255,255,255,.72); border:1px solid rgba(255,255,255,.9)}
+  .foot h3{margin:0 0 6px; font-size:11.5px; font-weight:800; color:#7A3D00}
+  .foot p{margin:0; font-size:10.5px; line-height:1.75; color:#6B4A16}
+  .foot a{color:var(--red); font-weight:800}
+
+  dialog{border:none; border-radius:14px; padding:0; width:min(92vw,420px);
+         box-shadow:0 20px 60px -20px rgba(0,0,0,.5)}
+  dialog::backdrop{background:rgba(20,12,4,.6)}
+  dialog h3{margin:0; padding:16px 18px 12px; font-size:15.5px; border-bottom:1px solid var(--line)}
+  dialog .body{padding:15px 18px; font-size:12.5px; line-height:1.9; color:#4A433B; max-height:56vh; overflow-y:auto}
+  dialog .foot2{padding:12px 18px calc(14px + var(--safe)); border-top:1px solid var(--line)}
+  dialog .close{width:100%; background:var(--red); color:#fff; font-weight:800; font-size:14px;
+                border-radius:8px; padding:12px; box-shadow:0 2px 0 var(--red-dark)}
+
+  #toast{position:fixed; left:50%; bottom:calc(26px + var(--safe));
+         transform:translateX(-50%) translateY(8px);
+         background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700;
+         padding:10px 18px; border-radius:999px; z-index:100; max-width:88%; text-align:center;
+         opacity:0; pointer-events:none; transition:opacity .22s, transform .22s}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+
+<div id="app">
+  <div class="brand">
+    <svg viewBox="0 0 132 30" aria-label="DOPA">
+      <text x="0" y="23" style="font:italic 900 25px 'Arial Black',sans-serif; fill:#EC1E4E; letter-spacing:-1px;">DOPA</text>
+      <path d="M112 5 L124 5 L117 15 L124 15 L110 27 L114 17 L107 17 Z" fill="#F5B920"/>
+    </svg>
+    <p>線上抽卡・台灣</p>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="tabs">
+      <button data-k="login" class="on">登入</button>
+      <button data-k="signup">註冊</button>
+    </div>
+
+    <!-- A2 登入 -->
+    <div class="pane" id="p-login">
+      <button class="sso" data-sso="login"><span class="ic">L</span>使用 LINE 登入</button>
+      <p class="ssohint">最快的方式。不需要記密碼。</p>
+
+      <div class="or">或使用電子郵件</div>
+
+      <div class="f">
+        <label for="lEmail">電子郵件</label>
+        <input id="lEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+      </div>
+      <div class="f">
+        <label for="lPw">密碼</label>
+        <div class="wrap">
+          <input id="lPw" type="password" autocomplete="current-password" placeholder="••••••••">
+          <button class="eye" data-eye="lPw">顯示</button>
+        </div>
+      </div>
+
+      <button class="submit" id="loginBtn" disabled>登入</button>
+      <p class="sub"><a href="#" id="forgot">忘記密碼？</a></p>
+    </div>
+
+    <!-- A1 註冊 -->
+    <div class="pane" id="p-signup" hidden>
+      <button class="sso" data-sso="signup"><span class="ic">L</span>使用 LINE 註冊</button>
+      <p class="ssohint">30 秒完成。註冊即贈體驗點數。</p>
+
+      <div class="or">或使用電子郵件</div>
+
+      <div class="f">
+        <label for="sEmail">電子郵件<span class="req">*</span></label>
+        <input id="sEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+        <p class="err" id="sEmailErr" hidden>請輸入正確的電子郵件格式。</p>
+      </div>
+      <div class="f">
+        <label for="sPw">密碼<span class="req">*</span></label>
+        <div class="wrap">
+          <input id="sPw" type="password" autocomplete="new-password" placeholder="至少 8 個字元">
+          <button class="eye" data-eye="sPw">顯示</button>
+        </div>
+        <p class="hint">請設定 8 個字元以上，並包含英文與數字。</p>
+        <p class="err" id="sPwErr" hidden>密碼需 8 個字元以上，且包含英文與數字。</p>
+      </div>
+      <div class="f">
+        <label for="sBirth">出生年月日<span class="req">*</span></label>
+        <input id="sBirth" type="date" autocomplete="bday">
+        <p class="hint">用於確認年齡。未滿 18 歲須經法定代理人同意。</p>
+        <p class="err" id="sBirthErr" hidden></p>
+      </div>
+
+      <label class="agree" for="sTerms">
+        <input type="checkbox" id="sTerms">
+        <span>我已閱讀並同意<a href="#" id="openTerms">服務條款</a>與<a href="#" id="openPrivacy">隱私權政策</a>。</span>
+      </label>
+      <label class="agree" for="sGuardian" id="guardianWrap" hidden>
+        <input type="checkbox" id="sGuardian">
+        <span>我未滿 18 歲，並已取得法定代理人的同意。</span>
+      </label>
+
+      <button class="submit" id="signupBtn" disabled>建立帳戶</button>
+      <p class="sub">註冊即可獲得體驗點數</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    <h3>關於本服務</h3>
+    <p>
+      抽出的卡片可申請實體寄送，或轉換為點數。<b>點數僅能用於本服務內，不提供現金兌換。</b><br>
+      營運公司資訊與聯絡方式請見<a href="#" id="openCompany">公司資訊</a>。
+    </p>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlg">
+  <h3 id="dlgT">—</h3>
+  <div class="body" id="dlgB"></div>
+  <div class="foot2"><button class="close" onclick="document.getElementById('dlg').close()">關閉</button></div>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+
+  const TERMS_DOC = { version: "terms-v1.0", updated: "2026-08-10" };
+
+  /* ── タブ ───────────────────────────────── */
+  $("#tabs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-k]"); if (!b) return;
+    [...$("#tabs").children].forEach(x => x.classList.toggle("on", x === b));
+    $("#p-login").hidden  = b.dataset.k !== "login";
+    $("#p-signup").hidden = b.dataset.k !== "signup";
+  });
+
+  /* ── パスワード表示 ─────────────────────── */
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-eye]"); if (!b) return;
+    const inp = $("#" + b.dataset.eye);
+    const show = inp.type === "password";
+    inp.type = show ? "text" : "password";
+    b.textContent = show ? "隱藏" : "顯示";
+  });
+
+  /* ── 登入 ───────────────────────────────── */
+  function vLogin(){
+    const ok = $("#lEmail").value.trim() !== "" && $("#lPw").value !== "";
+    $("#loginBtn").disabled = !ok;
+  }
+  ["lEmail","lPw"].forEach(id => $("#" + id).addEventListener("input", vLogin));
+  $("#loginBtn").addEventListener("click", () => {
+    if (!$("#loginBtn").disabled) location.href = "./mypage.html";
+  });
+
+  /* ── 註冊 ───────────────────────────────── */
+  const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+  const pwOk    = v => v.length >= 8 && /[A-Za-z]/.test(v) && /\d/.test(v);
+
+  function ageFrom(iso){
+    if (!iso) return null;
+    const b = new Date(iso + "T00:00:00");
+    if (isNaN(b)) return null;
+    const now = new Date();
+    let a = now.getFullYear() - b.getFullYear();
+    const m = now.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < b.getDate())) a--;
+    return a;
+  }
+
+  function vSignup(){
+    const email = $("#sEmail").value, pw = $("#sPw").value, birth = $("#sBirth").value;
+    const eOk = email === "" || emailOk(email);
+    const pOk = pw === ""    || pwOk(pw);
+    $("#sEmailErr").hidden = eOk;  $("#sEmail").setAttribute("aria-invalid", String(!eOk));
+    $("#sPwErr").hidden    = pOk;  $("#sPw").setAttribute("aria-invalid", String(!pOk));
+
+    const age = ageFrom(birth);
+    const minor = age !== null && age < 18;
+    const tooYoung = age !== null && age < 7;      // 台湾民法：7歳未満は無行為能力
+    $("#guardianWrap").hidden = !minor || tooYoung;
+    if (!minor) $("#sGuardian").checked = false;
+
+    const bErr = $("#sBirthErr");
+    if (age === null && birth !== "") { bErr.hidden = false; bErr.textContent = "請輸入正確的日期。"; }
+    else if (tooYoung) { bErr.hidden = false; bErr.textContent = "很抱歉，未滿 7 歲無法使用本服務。"; }
+    else bErr.hidden = true;
+
+    const ok = emailOk(email) && pwOk(pw) && age !== null && !tooYoung
+            && $("#sTerms").checked && (!minor || $("#sGuardian").checked);
+    const btn = $("#signupBtn");
+    btn.disabled = !ok;
+    btn.textContent = (minor && !$("#sGuardian").checked && !tooYoung)
+      ? "請確認法定代理人同意" : "建立帳戶";
+  }
+  ["sEmail","sPw","sBirth"].forEach(id => $("#" + id).addEventListener("input", vSignup));
+  ["sTerms","sGuardian"].forEach(id => $("#" + id).addEventListener("change", vSignup));
+
+  $("#signupBtn").addEventListener("click", () => {
+    if ($("#signupBtn").disabled) return;
+    /* 本番：user を作り、consent_log に kind=purchase_terms 相当（terms版）と
+       kind=age_check を1件ずつ書く。未成年なら guardian 同意も記録する */
+    toast(`consent_log(${TERMS_DOC.version} / age_check) → user 作成（原型未串接）`);
+    setTimeout(() => location.href = "./mypage.html", 1200);
+  });
+
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-sso]"); if (!b) return;
+    toast("LINE Login へ（原型未串接）");
+  });
+
+  /* ── 各種ドキュメント ───────────────────── */
+  const DOCS = {
+    openTerms: { t:"服務條款（摘要）", b:`
+      <p><b>點數</b></p>
+      <p>點數為非以有形媒介提供之數位內容。購買後不適用消費者保護法第19條之七日解除權
+         （依「通訊交易解除權合理例外情事適用準則」第二條第五款）。購買頁面會另行告知。</p>
+      <p><b>抽卡</b></p>
+      <p>抽卡為線上服務，一經提供即為完成。中獎機率依法揭露於各卡包頁面。</p>
+      <p><b>點數轉換</b></p>
+      <p>卡片可轉換為點數。<b>點數僅能用於本服務內，不提供任何形式的現金兌換。</b>轉換後無法復原。</p>
+      <p><b>實體寄送</b></p>
+      <p>可另行申請實體寄送。<b>自收到商品之日起七日內</b>可依第19條解除契約。</p>
+      <p><b>年齡</b></p>
+      <p>未滿 18 歲須經法定代理人同意。未滿 7 歲無法使用。</p>
+      <p style="color:#8A8178">版本 ${TERMS_DOC.version}（${TERMS_DOC.updated}）</p>` },
+    openPrivacy: { t:"隱私權政策（摘要）", b:`
+      <p>本服務蒐集之個人資料，依個人資料保護法處理與利用。</p>
+      <p><b>蒐集項目</b>：電子郵件、出生年月日、寄送用之姓名／電話／地址、交易紀錄。</p>
+      <p><b>利用目的</b>：帳戶管理、抽卡與寄送之履行、客服對應、法令遵循。</p>
+      <p><b>保存期間</b>：帳戶存續期間及法令要求之期間。</p>
+      <p><b>您的權利</b>：查詢、閱覽、複製、補充、更正、停止蒐集處理利用、刪除。</p>` },
+    openCompany: { t:"公司資訊", b:`
+      <p><b>營運公司</b>：（登記後填入）</p>
+      <p><b>統一編號</b>：（登記後填入）</p>
+      <p><b>地址</b>：（登記後填入）</p>
+      <p><b>客服信箱</b>：（開設後填入）</p>
+      <p style="color:#8A8178">法人形態が未確定のため、実登記後に記載します。
+         この欄を空のまま公開しないこと（信頼の可視化が台湾では差別化要因）。</p>` }
+  };
+  document.addEventListener("click", e => {
+    const a = e.target.closest("#openTerms, #openPrivacy, #openCompany"); if (!a) return;
+    e.preventDefault();
+    const d = DOCS[a.id];
+    $("#dlgT").textContent = d.t; $("#dlgB").innerHTML = d.b; $("#dlg").showModal();
+  });
+  $("#forgot").addEventListener("click", e => { e.preventDefault(); toast("密碼重設（原型未串接）"); });
+
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 2400);
+  }
+
+  vLogin(); vSignup();
+})();
+</script>
+</body></html>

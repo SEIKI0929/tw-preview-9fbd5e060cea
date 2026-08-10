@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的卡片 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* D1 我的卡片 ＋ D2 點數轉換。
+     ここは「保有」の実体で、③發送申請の入口でもある。
+     文言の制約：「買取」「回收」「換金」を使わない。點數轉換で統一し、
+     現金化の導線を一切作らない（幣商と同じ枠に入らないための担保）。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --coin:#F5B920; --green:#1E7A4D; --amber:#A85D00;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(120px + var(--safe)); position:relative}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 8px;
+      display:flex; align-items:center; gap:6px; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .back{padding:10px; display:flex; color:var(--ink)}
+  .hd .ttl{font-size:15px; font-weight:800; flex:1}
+  .hd .bal{display:flex; align-items:center; gap:4px; font-size:13px; font-weight:800;
+           font-variant-numeric:tabular-nums; background:#FBF6EA; border:1px solid #F0E4CB;
+           border-radius:999px; padding:5px 11px 5px 6px}
+  .coin{width:15px; height:15px; border-radius:50%; flex:0 0 auto;
+        background:radial-gradient(circle at 35% 30%,#FFE9A0,var(--coin) 60%,#C98A00)}
+
+  .tabs{position:sticky; top:52px; z-index:49; background:#fff; display:flex;
+        overflow-x:auto; scrollbar-width:none; border-top:1px solid #F1EDE7}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:0 0 auto; padding:11px 15px; font-size:13.5px; font-weight:700;
+               color:var(--sub); border-bottom:3px solid transparent; white-space:nowrap}
+  .tabs button.on{color:var(--ink); border-bottom-color:var(--red)}
+  .tabs button .n{font-size:11px; opacity:.75; margin-left:3px; font-variant-numeric:tabular-nums}
+
+  .bar{display:flex; align-items:center; gap:8px; padding:10px 12px 4px}
+  .bar .cnt{font-size:12px; font-weight:800; color:#6B4A16}
+  .bar .cnt b{color:var(--red); font-size:15px; font-variant-numeric:tabular-nums}
+  .bar .sel{margin-left:auto; font-size:12px; font-weight:800; color:var(--red);
+            background:#fff; border:1px solid var(--red); border-radius:999px; padding:5px 12px}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+        gap:9px; padding:8px 12px}
+  .c{position:relative; background:#fff; border-radius:9px; overflow:hidden;
+     border:2px solid transparent; box-shadow:0 2px 6px rgba(120,60,0,.16); text-align:left}
+  .c[aria-pressed="true"]{border-color:var(--red)}
+  .c .art{aspect-ratio:5/7; display:grid; place-items:center; position:relative;
+          background:radial-gradient(90% 60% at 50% 42%,#a24aff,#5a1fb0 40%,#200b48)}
+  .c .rk{display:inline-flex; align-items:center; justify-content:center; min-width:24px;
+         font:900 13px/1 "Arial Black",sans-serif; color:#fff; border-radius:4px; padding:5px 7px}
+  .rk.S{background:linear-gradient(#FFD24A,#C98A00); color:#3A2400}
+  .rk.A{background:linear-gradient(#B23EFF,#6D1FB0)}
+  .rk.B{background:linear-gradient(#3EA5FF,#1B5FD0)}
+  .rk.C{background:linear-gradient(#38C87A,#1E7A4D)}
+  .rk.D{background:#B9AFA2}
+  .c .nm{padding:6px 7px 3px; font-size:10.5px; font-weight:700; line-height:1.35;
+         display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .c .pt{padding:0 7px 7px; font-size:10.5px; font-weight:800; color:var(--sub);
+         font-variant-numeric:tabular-nums}
+  .c .check{position:absolute; right:5px; top:5px; width:22px; height:22px; border-radius:50%;
+            background:rgba(255,255,255,.9); border:1.5px solid #C9C1B6; display:grid;
+            place-items:center; font-size:13px; color:#fff}
+  .c[aria-pressed="true"] .check{background:var(--red); border-color:var(--red)}
+  .c .badge{position:absolute; left:5px; top:5px; font-size:9.5px; font-weight:800;
+            border-radius:3px; padding:2px 6px; color:#fff}
+  .c[data-st="ship_requested"] .badge{background:var(--amber)}
+  .c[data-st="shipped"] .badge{background:#4A7A2E}
+  .c[data-st="converted"] .badge{background:#8A8178}
+  .c[data-st="ship_requested"], .c[data-st="shipped"], .c[data-st="converted"]{opacity:.62}
+
+  .empty{padding:44px 24px; text-align:center; color:#7A4A00; font-size:13px;
+         font-weight:700; line-height:1.9}
+  .empty a{color:var(--red)}
+
+  .bottom{position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:60;
+          width:100%; max-width:480px; background:#fff; border-top:1px solid var(--line);
+          padding:10px 12px calc(10px + var(--safe)); box-shadow:0 -3px 12px rgba(120,60,0,.14)}
+  .sum{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px;
+       font-size:12.5px; font-weight:800}
+  .sum .v{font-variant-numeric:tabular-nums; color:var(--red); font-size:16px}
+  .acts{display:flex; gap:8px}
+  .act{flex:1; border-radius:9px; padding:12px 6px; text-align:center; font-size:13.5px; font-weight:800}
+  .act.ship{color:#fff; background:var(--red); box-shadow:0 2.5px 0 var(--red-dark)}
+  .act.conv{color:var(--red); background:#fff; border:2px solid var(--red)}
+  .act[disabled]{background:#D8D2CA; color:#fff; border-color:#D8D2CA; box-shadow:none; cursor:not-allowed}
+  .act:not([disabled]):active{transform:translateY(2px); box-shadow:none}
+  .note{margin:9px 0 0; font-size:10.5px; color:var(--sub); text-align:center; line-height:1.55}
+  .note b{color:var(--amber)}
+
+  dialog{border:none; border-radius:14px; padding:0; width:min(92vw,400px);
+         box-shadow:0 20px 60px -20px rgba(0,0,0,.5)}
+  dialog::backdrop{background:rgba(20,12,4,.6)}
+  dialog h3{margin:0; padding:16px 18px 12px; font-size:15.5px; border-bottom:1px solid var(--line)}
+  dialog .body{padding:15px 18px; font-size:12.5px; line-height:1.9; color:#4A433B}
+  dialog .body b{color:var(--ink)}
+  dialog .big{margin:12px 0; padding:13px; border-radius:9px; background:#FFF8E8;
+              border:1px solid #F0DFB8; text-align:center}
+  dialog .big .v{font-size:26px; font-weight:900; color:var(--amber); font-variant-numeric:tabular-nums}
+  dialog .big .l{font-size:11px; font-weight:800; color:#7A5A20; margin-top:2px}
+  dialog .foot{padding:12px 18px calc(14px + var(--safe)); border-top:1px solid var(--line);
+               display:flex; gap:8px}
+  dialog .foot button{flex:1; border-radius:8px; padding:12px; font-size:14px; font-weight:800}
+  dialog .cancel{background:#F2EEE7; color:#5E564D}
+  dialog .ok{background:var(--red); color:#fff; box-shadow:0 2px 0 var(--red-dark)}
+
+  #toast{position:fixed; left:50%; bottom:calc(132px + var(--safe));
+         transform:translateX(-50%) translateY(8px);
+         background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700;
+         padding:10px 18px; border-radius:999px; z-index:100; max-width:88%; text-align:center;
+         opacity:0; pointer-events:none; transition:opacity .22s, transform .22s}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <button class="back" aria-label="返回" onclick="history.back()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <span class="ttl">我的卡片</span>
+    <span class="bal"><span class="coin"></span><span id="bal">0</span> PT</span>
+  </header>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <div class="bar">
+    <span class="cnt"><b id="cnt">0</b> 張</span>
+    <button class="sel" id="selAll">全選</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="empty" hidden>這裡還沒有卡片。<br><a href="./app.html">前往抽卡 →</a></p>
+</div>
+
+<div class="bottom">
+  <div class="sum">
+    <span>已選 <span id="selN">0</span> 張</span>
+    <span class="v" id="selPt">+0 PT</span>
+  </div>
+  <div class="acts">
+    <button class="act conv" id="btnConv" disabled>點數轉換</button>
+    <button class="act ship" id="btnShip" disabled>申請寄送</button>
+  </div>
+  <p class="note" id="note">點數僅能用於本服務內，<b>不提供現金兌換</b>。轉換後無法復原。</p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="dlg">
+  <h3 id="dlgT">確認轉換</h3>
+  <div class="body" id="dlgB"></div>
+  <div class="foot">
+    <button class="cancel" id="dlgNo">取消</button>
+    <button class="ok" id="dlgYes">確認轉換</button>
+  </div>
+</dialog>
+
+<script>
+(() => {
+  "use strict";
+
+  const BALANCE = 1200;
+
+  /* holding テーブルを模したもの。status は一方向にしか進まない：
+     held → converted、または held → ship_requested → shipped */
+  const RANK_PT = { S: 8000, A: 2000, B: 400, C: 120, D: 40 };
+  const NAMES = {
+    S: "噴火龍 ex SAR", A: "噴火龍 ex SR", B: "皮卡丘 V", C: "稀有卡", D: "一般卡"
+  };
+  const HOLDINGS = [
+    ...["S","A","A","B","B","B","C","C","C","C","D","D","D","D","D","D"]
+      .map((r, i) => ({ id:"h"+i, rank:r, name:NAMES[r], pt:RANK_PT[r], status:"held" })),
+    { id:"h90", rank:"A", name:NAMES.A, pt:RANK_PT.A, status:"ship_requested" },
+    { id:"h91", rank:"B", name:NAMES.B, pt:RANK_PT.B, status:"shipped" },
+    { id:"h92", rank:"C", name:NAMES.C, pt:RANK_PT.C, status:"converted" }
+  ];
+
+  const TABS = [
+    { k:"held",           label:"可操作" },
+    { k:"ship_requested", label:"寄送申請中" },
+    { k:"shipped",        label:"已寄送" },
+    { k:"converted",      label:"已轉換" }
+  ];
+  const ST_LABEL = { ship_requested:"申請中", shipped:"已寄送", converted:"已轉換" };
+
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+
+  let tab = "held";
+  const selected = new Set();
+
+  $("#bal").textContent = fmt(BALANCE);
+
+  function list(){ return HOLDINGS.filter(h => h.status === tab); }
+
+  function renderTabs(){
+    $("#tabs").innerHTML = TABS.map(t => {
+      const n = HOLDINGS.filter(h => h.status === t.k).length;
+      return `<button data-k="${t.k}" class="${t.k === tab ? "on" : ""}">${t.label}<span class="n">${n}</span></button>`;
+    }).join("");
+  }
+
+  function renderGrid(){
+    const rows = list();
+    $("#cnt").textContent = rows.length;
+    $("#empty").hidden = rows.length > 0;
+    $("#grid").innerHTML = rows.map(h => `
+      <button class="c" data-id="${h.id}" data-st="${h.status}"
+              aria-pressed="${selected.has(h.id)}" ${h.status !== "held" ? "disabled" : ""}>
+        <div class="art">
+          <span class="rk ${h.rank}">${h.rank}</span>
+          ${h.status !== "held" ? `<span class="badge">${ST_LABEL[h.status]}</span>` : ""}
+          ${h.status === "held" ? `<span class="check">${selected.has(h.id) ? "✓" : ""}</span>` : ""}
+        </div>
+        <div class="nm">${esc(h.name)}</div>
+        <div class="pt">轉換 ${fmt(h.pt)} PT</div>
+      </button>`).join("");
+    renderSum();
+  }
+
+  function renderSum(){
+    const sel = HOLDINGS.filter(h => selected.has(h.id));
+    const pt = sel.reduce((a, h) => a + h.pt, 0);
+    $("#selN").textContent = sel.length;
+    $("#selPt").textContent = `+${fmt(pt)} PT`;
+    const none = sel.length === 0;
+    $("#btnConv").disabled = none;
+    $("#btnShip").disabled = none;
+    $("#selAll").textContent = (sel.length && sel.length === list().length) ? "全部取消" : "全選";
+  }
+
+  $("#tabs").addEventListener("click", e => {
+    const b = e.target.closest("button[data-k]"); if (!b) return;
+    tab = b.dataset.k; selected.clear();
+    renderTabs(); renderGrid();
+  });
+
+  $("#grid").addEventListener("click", e => {
+    const b = e.target.closest(".c"); if (!b || b.disabled) return;
+    const id = b.dataset.id;
+    selected.has(id) ? selected.delete(id) : selected.add(id);
+    b.setAttribute("aria-pressed", String(selected.has(id)));
+    const chk = b.querySelector(".check");
+    if (chk) chk.textContent = selected.has(id) ? "✓" : "";
+    renderSum();
+  });
+
+  $("#selAll").addEventListener("click", () => {
+    const rows = list();
+    const all = rows.length > 0 && rows.every(h => selected.has(h.id));
+    rows.forEach(h => all ? selected.delete(h.id) : selected.add(h.id));
+    renderGrid();
+  });
+
+  /* 點數轉換。status は一方向なので、確認を必ず挟む */
+  $("#btnConv").addEventListener("click", () => {
+    const sel = HOLDINGS.filter(h => selected.has(h.id));
+    const pt = sel.reduce((a, h) => a + h.pt, 0);
+    $("#dlgB").innerHTML = `
+      <p>將選取的 <b>${sel.length} 張</b>卡片轉換為點數。</p>
+      <div class="big"><div class="v">+${fmt(pt)}</div><div class="l">PT</div></div>
+      <p><b>轉換後無法復原</b>，卡片不會再回到您的帳戶，也無法申請實體寄送。</p>
+      <p>點數僅能用於本服務內的抽卡，<b>不提供任何形式的現金兌換</b>。</p>`;
+    $("#dlg").showModal();
+  });
+
+  $("#dlgNo").addEventListener("click", () => $("#dlg").close());
+  $("#dlgYes").addEventListener("click", () => {
+    const sel = HOLDINGS.filter(h => selected.has(h.id));
+    const pt = sel.reduce((a, h) => a + h.pt, 0);
+    /* 本番：1トランザクションで
+       conversion を sel.length 件、holding.status を converted、
+       point_ledger に +pt を1行（reason=conversion） */
+    sel.forEach(h => { h.status = "converted"; });
+    selected.clear();
+    $("#dlg").close();
+    renderTabs(); renderGrid();
+    toast(`已轉換 ${sel.length} 張，獲得 ${fmt(pt)} PT（原型未串接）`);
+  });
+
+  // ③ 發送申請へ。ここから先が7日解除権の領域
+  $("#btnShip").addEventListener("click", () => {
+    const ids = [...selected].join(",");
+    location.href = `./ship.html?ids=${encodeURIComponent(ids)}`;
+  });
+
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 2400);
+  }
+
+  renderTabs(); renderGrid();
+})();
+</script>
+</body></html>

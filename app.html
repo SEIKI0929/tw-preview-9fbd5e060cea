@@ -252,8 +252,8 @@
       </svg>
     </div>
     <div class="hd-btns">
-      <button class="btn-line" data-toast="登入功能為串接後開放">登入</button>
-      <button class="btn-fill" data-toast="註冊功能為串接後開放">註冊會員</button>
+      <button class="btn-line" onclick="location.href='./auth.html'">登入</button>
+      <button class="btn-fill" onclick="location.href='./auth.html'">註冊會員</button>
     </div>
   </header>
 
@@ -328,11 +328,13 @@
       cta:"註冊會員後抽卡", ghost:true, bg:"linear-gradient(140deg,#8B5A00,#FFC93C 45%,#3B7D2B)" }
   ];
 
+  // 会員中心（mypage.html）と同じ4本立てに揃える
   const TABS = [
-    { k:"list",  label:"抽卡列表", d:"M4 5h16M4 12h16M4 19h10" },
-    { k:"news",  label:"快報",     d:"M4 6h10v12H4z M14 9h6v9h-6z" },
-    { k:"rank",  label:"排行榜",   d:"M6 20V10M12 20V4M18 20v-7" },
-    { k:"win",   label:"中獎紀錄", d:"M8 4h8v5a4 4 0 01-8 0zM12 13v5M8 21h8" }
+    { k:"list",   label:"抽卡列表", href:"",             d:"M4 5h16M4 12h16M4 19h10" },
+    { k:"news",   label:"快報",     href:"",             d:"M4 6h10v12H4z M14 9h6v9h-6z" },
+    { k:"cards",  label:"我的卡片", href:"./cards.html", d:"M6 20V10M12 20V4M18 20v-7" },
+    { k:"mypage", label:"會員中心", href:"./mypage.html",
+      d:"M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 3.6-6 8-6s8 2 8 6" }
   ];
 
   const $ = s => document.querySelector(s);
@@ -422,17 +424,18 @@
 
   /* ── 下部タブ ─────────────────────────────── */
   $("#tabbar").innerHTML = TABS.map((t, i) => `
-    <button class="${i ? "" : "on"}" data-k="${t.k}">
+    <button class="${i ? "" : "on"}" data-k="${t.k}" data-href="${t.href}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${t.d}"/></svg>
       ${esc(t.label)}
     </button>`).join("");
   $("#tabbar").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.href) { location.href = b.dataset.href; return; }
     [...$("#tabbar").children].forEach(x => x.classList.remove("on"));
     b.classList.add("on");
-    if (b.dataset.k !== "list") toast("此頁面尚未建置");
-    else window.scrollTo({ top:0, behavior:"smooth" });
+    if (b.dataset.k === "list") window.scrollTo({ top:0, behavior:"smooth" });
+    else toast("此頁面尚未建置");
   });
 
   /* ── トースト ─────────────────────────────── */
