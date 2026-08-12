@@ -212,6 +212,16 @@
     </section>
 
     <section class="sec">
+      <h2>公開顯示</h2>
+      <div id="nPub"></div>
+    </section>
+
+    <p class="note">
+      快報與排行榜上的名稱一律經過遮蔽（例如<b>王••</b>），
+      不會顯示全名或完整的會員代號。<b>關閉後仍會計入統計數字，只是不出現在列表中。</b>
+    </p>
+
+    <section class="sec">
       <h2>行銷資訊</h2>
       <div id="nMkt"></div>
     </section>
@@ -330,6 +340,12 @@
     { k:"wdr",  lb:"解除權期限", d:"七日期限剩餘 2 天時提醒。", on:true },
     { k:"pt",   lb:"點數異動",   d:"購買・轉換・客服調整時通知。", on:true }
   ];
+  /* 快報・排行榜への掲載。**他人に見せる話なので通知とは分けた。**
+     既定はオンだが、いつでも外せる。外しても集計には入る（件数が減ると全体像が歪む） */
+  const PUB = [
+    { k:"feed", lb:"在快報顯示我的中獎", d:"名稱會遮蔽為「王••」。", on:true },
+    { k:"rank", lb:"在排行榜顯示",       d:"抽卡次數與收藏數的排名。", on:true }
+  ];
   const MKT = [
     { k:"new",  lb:"新卡包上架", d:"新的卡包開賣時通知。", on:false },
     { k:"camp", lb:"活動與優惠", d:"免運或加碼活動的通知。", on:false }
@@ -342,7 +358,7 @@
               role="switch" aria-checked="${t.on}" aria-label="${t.lb}"></button>
     </div>`).join("");
   }
-  function renderNotify(){ toggles(SVC, "#nSvc"); toggles(MKT, "#nMkt"); }
+  function renderNotify(){ toggles(SVC, "#nSvc"); toggles(PUB, "#nPub"); toggles(MKT, "#nMkt"); }
 
   /* ── 操作 ───────────────────────────────── */
   const MSG = {
@@ -359,7 +375,7 @@
       const on = !sw.classList.contains("on");
       sw.classList.toggle("on", on);
       sw.setAttribute("aria-checked", String(on));
-      const all = [...SVC, ...MKT].find(t => t.k === sw.dataset.tg);
+      const all = [...SVC, ...PUB, ...MKT].find(t => t.k === sw.dataset.tg);
       if (all) all.on = on;
       toast(on ? "已開啟通知" : "已關閉通知");
       return;

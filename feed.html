@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>快報 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* G1 快報 ＋ G2 排行榜 ＋ G3 中獎紀錄。tabbar の「快報」から来る。
+     ?v=feed | rank | winners
+
+     **他人の当選を見せる画面なので、個資の扱いが要る。**
+     - 会員の表示は伏せ字（王••）と代号の一部だけ。**フルの ID も本名も出さない**
+     - 快報への掲載は**設定でオフにできる**（帳戶設定 → 通知）。既定はオン
+     - オフにした人は、集計（件数）には入るが**一覧には出さない**
+
+     **排行榜に課金額を出さないこと。**
+     「いくら使ったか」の順位を作ると、そのまま課金を煽る仕組みになる。
+     未成年も使う以上、金額の競争を画面に持ち込まない。順位は抽卡と獲得の実績だけにする。
+
+     配色・寸法は mypage.html / logs.html に合わせている。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --green:#1E7A4D; --amber:#A85D00; --blue:#1B5FD0; --gold:#B8860B;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(76px + var(--safe))}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  a{text-decoration:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 14px;
+      display:flex; align-items:center; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .ttl{font-size:15px; font-weight:800}
+  .hd .set{margin-left:auto; font-size:11.5px; font-weight:800; color:var(--blue);
+           background:#EAF1FC; border-radius:7px; padding:6px 11px}
+
+  .segs{position:sticky; top:52px; z-index:49; background:#fff; display:grid;
+        grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line)}
+  .segs button{padding:11px 4px 9px; font-size:13px; font-weight:800; color:var(--sub);
+               border-bottom:3px solid transparent}
+  .segs button.on{color:var(--red); border-bottom-color:var(--red)}
+
+  .view{display:none}
+  .view.on{display:block}
+
+  .sec{background:#fff; margin:12px; border-radius:12px; overflow:hidden;
+       box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .sec > h2{margin:0; padding:12px 14px 10px; font-size:12px; font-weight:800; color:var(--sub);
+            letter-spacing:.05em; border-bottom:1px solid var(--line);
+            display:flex; align-items:center; gap:8px}
+  .sec > h2 .r{margin-left:auto; font-weight:700; font-size:10.5px}
+
+  /* 快報の1行 */
+  .fd{display:flex; gap:11px; padding:12px 14px; border-bottom:1px solid var(--line);
+      align-items:center}
+  .fd:last-child{border-bottom:none}
+  .fd .rk{flex:0 0 auto; width:30px; height:30px; border-radius:8px; display:grid;
+          place-items:center; font:900 12px/1 var(--mono); color:#fff}
+  .fd .tx{flex:1; min-width:0}
+  .fd .tx b{display:block; font-size:13px; font-weight:800;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .fd .tx small{display:block; font-size:10.5px; color:var(--sub); margin-top:2px; line-height:1.5}
+  .fd .ago{flex:0 0 auto; font-size:10.5px; color:var(--sub); font-variant-numeric:tabular-nums}
+
+  .rk.S{background:var(--gold)} .rk.A{background:#6D1FB0} .rk.B{background:#1B5FD0}
+  .rk.C{background:#1E7A4D} .rk.D{background:#8A8178}
+
+  /* 排行榜 */
+  .lb{display:flex; align-items:center; gap:11px; padding:12px 14px;
+      border-bottom:1px solid var(--line)}
+  .lb:last-child{border-bottom:none}
+  .lb .no{flex:0 0 30px; text-align:center; font:900 15px/1 var(--mono); color:var(--sub);
+          font-variant-numeric:tabular-nums}
+  .lb .no.m1{color:var(--gold)} .lb .no.m2{color:#8E8E93} .lb .no.m3{color:#A9702B}
+  .lb .tx{flex:1; min-width:0}
+  .lb .tx b{display:block; font-size:13.5px; font-weight:800}
+  .lb .tx small{display:block; font-size:10.5px; color:var(--sub); margin-top:2px}
+  .lb .v{flex:0 0 auto; font-size:15px; font-weight:900; font-variant-numeric:tabular-nums}
+  .lb .v span{font-size:10.5px; font-weight:700; color:var(--sub); margin-left:2px}
+  .lb.me{background:#FFF9E8}
+
+  .filters{display:flex; gap:8px; padding:11px 14px; border-bottom:1px solid var(--line);
+           background:#FAF7F1; overflow-x:auto}
+  .filters button{font-size:11.5px; font-weight:800; color:var(--sub); background:#fff;
+                  border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+                  white-space:nowrap}
+  .filters button.on{background:var(--ink); color:#fff; border-color:var(--ink)}
+
+  .note{margin:12px; padding:13px 14px; border-radius:12px; font-size:11.5px; line-height:1.85;
+        background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.95); color:#5A4113}
+  .note b{color:#3C2A0C}
+  .note.strong{background:#FFF6E0; border-color:#F3DFAE}
+
+  .tabbar{position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:60;
+          width:100%; max-width:480px; background:#fff; border-top:1px solid var(--line);
+          display:grid; grid-template-columns:repeat(4,1fr); padding-bottom:var(--safe)}
+  .tabbar a{padding:7px 0 8px; display:flex; flex-direction:column; align-items:center; gap:3px;
+            font-size:10.5px; font-weight:700; color:var(--sub)}
+  .tabbar a.on{color:var(--red)}
+  .tabbar svg{width:21px; height:21px}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <span class="ttl" id="ttl">快報</span>
+    <a class="set" href="./account.html?v=notify">顯示設定</a>
+  </header>
+
+  <div class="segs">
+    <button data-v="feed" class="on">快報</button>
+    <button data-v="rank">排行榜</button>
+    <button data-v="winners">中獎紀錄</button>
+  </div>
+
+  <!-- 快報 -->
+  <section class="view on" id="v-feed">
+    <section class="sec">
+      <h2>最新中獎 <span class="r">S・A 等級</span></h2>
+      <div id="feed"></div>
+    </section>
+
+    <p class="note strong">
+      <b>顯示的會員名稱經過遮蔽，無法識別特定個人。</b>
+      不想被顯示時，可以在<b>帳戶設定 → 通知</b>關閉。
+      關閉後仍會計入統計，但不會出現在這個列表。
+    </p>
+
+    <p class="note">
+      這裡顯示的是<b>已經確定的抽卡結果</b>。
+      中獎機率依法揭露於<a href="./odds.html" style="color:var(--red); font-weight:800">機率一覽</a>，
+      <b>不會因為快報上的中獎次數而改變</b>。
+    </p>
+  </section>
+
+  <!-- 排行榜 -->
+  <section class="view" id="v-rank">
+    <div class="filters" id="rankTabs"></div>
+    <section class="sec">
+      <h2 id="rankTtl">—</h2>
+      <div id="rank"></div>
+    </section>
+
+    <p class="note strong">
+      <b>這裡沒有「消費金額」的排行。</b>
+      我們不製作以花費多寡決定名次的榜單。<br>
+      排名依據為抽卡次數與獲得的卡片，<b>不會因為多花錢而直接提升名次</b>。
+    </p>
+  </section>
+
+  <!-- 中獎紀錄 -->
+  <section class="view" id="v-winners">
+    <div class="filters" id="winTabs"></div>
+    <section class="sec">
+      <h2>全部中獎紀錄 <span class="r" id="winCount">—</span></h2>
+      <div id="winners"></div>
+    </section>
+
+    <p class="note">
+      包含所有等級的紀錄。<b>這是給大家看的公開紀錄</b>，
+      您自己的抽卡明細請看
+      <a href="./logs.html?v=draws" style="color:var(--red); font-weight:800">抽卡紀錄</a>，
+      那裡會顯示<b>抽卡當時的機率版本</b>。
+    </p>
+  </section>
+</div>
+
+<nav class="tabbar">
+  <a href="./app.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round"><path d="M4 5h16M4 12h16M4 19h10"/></svg>抽卡列表</a>
+  <a href="./feed.html" class="on">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round"><path d="M4 6h10v12H4z M14 9h6v9h-6z"/></svg>快報</a>
+  <a href="./cards.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round"><path d="M6 20V10M12 20V4M18 20v-7"/></svg>我的卡片</a>
+  <a href="./mypage.html">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round"><path d="M12 12a4 4 0 100-8 4 4 0 000 8zM4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>會員中心</a>
+</nav>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+
+  const ME = "u_8f2a41";
+
+  /* 会員の表示は伏せ字と代号の一部だけ。**フルの ID も本名も出さない。**
+     実装ではサーバー側で伏せた形にして返す（クライアントで伏せると元の値が届いてしまう） */
+  const WINS = [
+    { at:"20:55", who:"陳••", uid:"c7", rank:"S", item:"噴火龍 ex SAR",  pack:"噴火龍 ex 決戰包" },
+    { at:"20:41", who:"林••", uid:"3a", rank:"A", item:"魯夫 SR",        pack:"海賊王 世界最強戰士" },
+    { at:"20:12", who:"王••", uid:"41", rank:"A", item:"噴火龍 ex SR",   pack:"噴火龍 ex 決戰包" },
+    { at:"19:58", who:"黃••", uid:"9b", rank:"S", item:"香克斯 SEC",     pack:"海賊王 世界最強戰士" },
+    { at:"19:30", who:"張••", uid:"5d", rank:"A", item:"紀念 SR",        pack:"25 週年紀念收藏" },
+    { at:"18:47", who:"李••", uid:"2a", rank:"A", item:"噴火龍 ex SR",   pack:"噴火龍 ex 決戰包" },
+    { at:"18:03", who:"吳••", uid:"6e", rank:"S", item:"紀念 SAR",       pack:"25 週年紀念收藏" },
+    { at:"17:22", who:"蔡••", uid:"7f", rank:"A", item:"魯夫 SR",        pack:"海賊王 世界最強戰士" }
+  ];
+
+  /* 中獎紀錄は全等級。快報（S・A）より広い */
+  const ALL = WINS.concat([
+    { at:"20:50", who:"周••", uid:"a0", rank:"B", item:"皮卡丘 V",    pack:"噴火龍 ex 決戰包" },
+    { at:"20:33", who:"徐••", uid:"b1", rank:"C", item:"稀有卡 隨機", pack:"海賊王 世界最強戰士" },
+    { at:"20:20", who:"許••", uid:"c2", rank:"B", item:"索隆 R",      pack:"海賊王 世界最強戰士" },
+    { at:"19:44", who:"鄭••", uid:"d3", rank:"C", item:"稀有卡 隨機", pack:"噴火龍 ex 決戰包" },
+    { at:"19:10", who:"謝••", uid:"e4", rank:"B", item:"紀念 R",      pack:"25 週年紀念收藏" }
+  ]).sort((a, b) => b.at.localeCompare(a.at));
+
+  function line(w){
+    return `<div class="fd">
+      <span class="rk ${w.rank}">${w.rank}</span>
+      <span class="tx">
+        <b>${esc(w.item)}</b>
+        <small>${esc(w.who)}（<span class="mono">••${w.uid}</span>） ・ ${esc(w.pack)}</small>
+      </span>
+      <span class="ago">${w.at}</span>
+    </div>`;
+  }
+
+  function renderFeed(){ $("#feed").innerHTML = WINS.map(line).join(""); }
+
+  /* ── 排行榜 ─────────────────────────────────
+     **消費金額の順位は作らない。**課金を煽る仕組みになるため。
+     順位は抽卡回数と獲得内容だけで決める */
+  const RANKS = {
+    draws: { lb:"抽卡次數", ttl:"本月抽卡次數", unit:"次",
+      rows:[
+        { who:"陳••", uid:"c7", v:412 }, { who:"黃••", uid:"9b", v:388 },
+        { who:"林••", uid:"3a", v:301 }, { who:"張••", uid:"5d", v:264 },
+        { who:"王••", uid:"41", v:128, me:true }, { who:"李••", uid:"2a", v:96 }
+      ] },
+    sar:   { lb:"S 等級", ttl:"本月 S 等級獲得數", unit:"張",
+      rows:[
+        { who:"黃••", uid:"9b", v:3 }, { who:"陳••", uid:"c7", v:2 },
+        { who:"吳••", uid:"6e", v:2 }, { who:"林••", uid:"3a", v:1 },
+        { who:"蔡••", uid:"7f", v:1 }
+      ] },
+    coll:  { lb:"收藏數", ttl:"持有卡片數", unit:"張",
+      rows:[
+        { who:"陳••", uid:"c7", v:214 }, { who:"張••", uid:"5d", v:187 },
+        { who:"黃••", uid:"9b", v:166 }, { who:"王••", uid:"41", v:16, me:true }
+      ] }
+  };
+  let rankKey = "draws";
+
+  function renderRank(){
+    const r = RANKS[rankKey];
+    $("#rankTabs").innerHTML = Object.entries(RANKS).map(([k, v]) =>
+      `<button data-rk="${k}"${k === rankKey ? ' class="on"' : ""}>${v.lb}</button>`).join("");
+    $("#rankTtl").innerHTML = `${r.ttl} <span class="r">每月 1 日重置</span>`;
+    $("#rank").innerHTML = r.rows.map((x, i) => `<div class="lb${x.me ? " me" : ""}">
+      <span class="no${i < 3 ? " m" + (i + 1) : ""}">${i + 1}</span>
+      <span class="tx">
+        <b>${esc(x.who)}${x.me ? "（您）" : ""}</b>
+        <small class="mono">••${x.uid}</small>
+      </span>
+      <span class="v">${fmt(x.v)}<span>${r.unit}</span></span>
+    </div>`).join("");
+  }
+
+  /* ── 中獎紀錄 ───────────────────────────── */
+  const PACKS = ["全部", "噴火龍 ex 決戰包", "海賊王 世界最強戰士", "25 週年紀念收藏"];
+  let winPack = "全部";
+
+  function renderWinners(){
+    $("#winTabs").innerHTML = PACKS.map(p =>
+      `<button data-wp="${esc(p)}"${p === winPack ? ' class="on"' : ""}>${esc(p)}</button>`).join("");
+    const rows = ALL.filter(w => winPack === "全部" || w.pack === winPack);
+    $("#winCount").textContent = `${rows.length} 筆`;
+    $("#winners").innerHTML = rows.map(line).join("");
+  }
+
+  document.addEventListener("click", e => {
+    const r = e.target.closest("[data-rk]");
+    if (r) { rankKey = r.dataset.rk; renderRank(); return; }
+    const w = e.target.closest("[data-wp]");
+    if (w) { winPack = w.dataset.wp; renderWinners(); }
+  });
+
+  const TITLE = { feed:"快報", rank:"排行榜", winners:"中獎紀錄" };
+  function show(v){
+    document.querySelectorAll(".segs button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+    document.querySelectorAll(".view").forEach(s => s.classList.remove("on"));
+    $("#v-" + v).classList.add("on");
+    $("#ttl").textContent = TITLE[v] || "快報";
+    scrollTo({ top:0 });
+  }
+  document.querySelector(".segs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (b) show(b.dataset.v);
+  });
+
+  renderFeed(); renderRank(); renderWinners();
+
+  const v0 = new URLSearchParams(location.search).get("v");
+  show(TITLE[v0] ? v0 : "feed");
+})();
+</script>
+</body></html>
