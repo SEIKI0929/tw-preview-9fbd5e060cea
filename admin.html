@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>管理畫面 — DOPA 台灣</title>
 </head><body>
 <style>
@@ -152,6 +152,20 @@
   .kpi.alert{border-color:var(--amber); background:var(--amber-bg)}
   .kpi.alert .v{color:var(--amber)}
 
+  /* 在庫：帳簿と実物の差 */
+  .diff{font-family:var(--mono); font-weight:800; font-variant-numeric:tabular-nums}
+  .diff.zero{color:var(--sub); font-weight:400}
+  .diff.minus{color:var(--red)}
+  .diff.plus{color:var(--amber)}
+  tr.grp td{background:#FAF8F5; font-weight:800; font-size:12px; color:var(--sub);
+            border-bottom:1px solid var(--line)}
+  tr.grp td .r{float:right; font-weight:600}
+  .cnt{width:74px; text-align:right; font-family:var(--mono); font-size:12.5px;
+       border:1px solid var(--line); border-radius:6px; padding:6px 8px; background:#fff}
+  .cnt:focus{border-color:var(--blue); outline:none}
+  td.sub{color:var(--sub); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap}
+  th.sub{color:#9A9188}
+
   .filters{display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:12px 16px;
            border-bottom:1px solid var(--line2); background:#FAF8F5}
   .filters select, .filters input{font-size:12.5px; border:1px solid var(--line); border-radius:6px;
@@ -179,10 +193,10 @@
     <nav id="nav">
       <div class="grp">運用</div>
       <a href="#" data-v="packs" class="on">卡包・確率設定</a>
+      <a href="#" data-v="stock">在庫管理</a>
       <a href="#" data-v="audit">抽選ログ監査</a>
       <a href="#" data-v="ship">出荷管理</a>
       <div class="grp">未実装</div>
-      <a href="#" class="off">在庫管理<span class="tag">H2</span></a>
       <a href="#" class="off">会員管理<span class="tag">H5</span></a>
       <a href="#" class="off">売上・分析<span class="tag">H6</span></a>
     </nav>
@@ -235,6 +249,68 @@
             <b>最低保証</b>は賭博罪の構成要件を外す根拠になります。必ず何らかの商品が手に入る形を維持してください。
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- H2 在庫管理 -->
+    <section class="view" id="v-stock">
+      <div class="head">
+        <div>
+          <h1>在庫管理</h1>
+          <p class="desc">システム上の数と<b>実物</b>を突き合わせます。
+            抽選ログ監査（H3）は「公開した確率どおりに引いたか」しか示せません。
+            <b>その賞品が本当に存在したかは、ここでしか示せません。</b></p>
+        </div>
+        <div class="act">
+          <button class="btn ghost" id="btnInbound">入庫を記録</button>
+          <button class="btn primary" id="btnCount">棚卸を確定</button>
+        </div>
+      </div>
+
+      <div class="kpis" id="stockKpis"></div>
+
+      <div class="callout bad">
+        <b>在庫が尽きた等級を、確率表に残さないこと。</b>
+        出ない賞を「出る」と表示している状態になり、<b>転蛋法の獎項表示義務に反します</b>。
+        在庫が0になった等級は、<b>確率を0にした新しい版を切って</b>公開し直してください。
+        版を切らずに在庫だけ0にすると、公開中の確率表と実態がずれます。
+      </div>
+
+      <div class="card">
+        <h2>在庫台帳 <span class="note" id="countedAt">—</span></h2>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>等</th><th>賞品</th>
+            <th class="n">未抽選</th>
+            <th class="sub n">利用者保有</th><th class="sub n">発送待ち</th>
+            <th class="n">帳簿（手元）</th><th class="n">実棚卸</th><th class="n">差異</th>
+            <th class="sub n">出荷済</th>
+          </tr></thead>
+          <tbody id="stockRows"></tbody>
+        </table></div>
+      </div>
+
+      <div class="callout info">
+        <b>「帳簿（手元）」は、まだ倉庫にあるはずの数です。</b>
+        未抽選のぶんに加え、<b>利用者が引いたが發送申請していない分（保有中）と、申請済みで未発送の分</b>を含みます。
+        引かれた時点では現物は動きません。<b>出荷済みだけが手元から消えます。</b>
+      </div>
+
+      <div class="card">
+        <h2>入出庫の履歴 <span class="note">直近</span></h2>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>日付</th><th>卡包</th><th>賞品</th><th>種別</th>
+            <th class="n">増減</th><th>担当</th><th>備考</th>
+          </tr></thead>
+          <tbody id="moves"></tbody>
+        </table></div>
+      </div>
+
+      <div class="callout warn">
+        <b>棚卸で数が合わなかったとき、帳簿を黙って実物に合わせないこと。</b>
+        差異は<b>調整として記録に残します</b>（誰が・いつ・いくつ・なぜ）。
+        上書きすると、盗難・二重出荷・抽選の不具合のどれが起きたのか永久に分からなくなります。
       </div>
     </section>
 
@@ -330,25 +406,25 @@
   const PACKS = [
     { id:"g_1", name:"噴火龍 ex 決戰包", price:500, version:3, published:"2026-08-08",
       stock:43, total:200, status:"公開中", guarantee:50, prizes:[
-        { rank:"S", name:"噴火龍 ex SAR", prob:0.0100, stock:2 },
-        { rank:"A", name:"噴火龍 ex SR",  prob:0.0400, stock:8 },
-        { rank:"B", name:"皮卡丘 V",      prob:0.1500, stock:30 },
-        { rank:"C", name:"稀有卡 隨機",   prob:0.3000, stock:60 },
-        { rank:"D", name:"一般卡 隨機",   prob:0.5000, stock:100 }]},
+        { rank:"S", name:"噴火龍 ex SAR", prob:0.0100, stock:1,  init:2 },
+        { rank:"A", name:"噴火龍 ex SR",  prob:0.0400, stock:0,  init:8 },
+        { rank:"B", name:"皮卡丘 V",      prob:0.1500, stock:5,  init:30 },
+        { rank:"C", name:"稀有卡 隨機",   prob:0.3000, stock:12, init:60 },
+        { rank:"D", name:"一般卡 隨機",   prob:0.5000, stock:25, init:100 }]},
     { id:"g_2", name:"海賊王 世界最強戰士", price:300, version:1, published:"2026-08-05",
       stock:112, total:300, status:"公開中", guarantee:30, prizes:[
-        { rank:"S", name:"香克斯 SEC",  prob:0.0050, stock:1 },
-        { rank:"A", name:"魯夫 SR",     prob:0.0350, stock:9 },
-        { rank:"B", name:"索隆 R",      prob:0.1600, stock:48 },
-        { rank:"C", name:"稀有卡 隨機", prob:0.3000, stock:90 },
-        { rank:"D", name:"一般卡 隨機", prob:0.5000, stock:152 }]},
+        { rank:"S", name:"香克斯 SEC",  prob:0.0050, stock:1,  init:1 },
+        { rank:"A", name:"魯夫 SR",     prob:0.0350, stock:4,  init:9 },
+        { rank:"B", name:"索隆 R",      prob:0.1600, stock:18, init:48 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.3000, stock:34, init:90 },
+        { rank:"D", name:"一般卡 隨機", prob:0.5000, stock:55, init:152 }]},
     { id:"g_3", name:"25 週年紀念收藏", price:1000, version:2, published:"2026-08-07",
       stock:0, total:80, status:"完売", guarantee:100, prizes:[
-        { rank:"S", name:"紀念 SAR",    prob:0.0200, stock:0 },
-        { rank:"A", name:"紀念 SR",     prob:0.0800, stock:0 },
-        { rank:"B", name:"紀念 R",      prob:0.2000, stock:0 },
-        { rank:"C", name:"稀有卡 隨機", prob:0.3000, stock:0 },
-        { rank:"D", name:"一般卡 隨機", prob:0.4000, stock:0 }]}
+        { rank:"S", name:"紀念 SAR",    prob:0.0200, stock:0, init:2 },
+        { rank:"A", name:"紀念 SR",     prob:0.0800, stock:0, init:6 },
+        { rank:"B", name:"紀念 R",      prob:0.2000, stock:0, init:16 },
+        { rank:"C", name:"稀有卡 隨機", prob:0.3000, stock:0, init:24 },
+        { rank:"D", name:"一般卡 隨機", prob:0.4000, stock:0, init:32 }]}
   ];
 
   let editing = PACKS[0];
@@ -538,6 +614,153 @@
         <div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${k.s}</div></div>`).join("");
   }
 
+  /* ── H2 在庫 ─────────────────────────────────
+     H3（抽選ログ監査）は「公開確率どおりに引いたか」までしか示せない。
+     その賞品が実在したかは、実物の数を突き合わせないと示せない。ここがその役目。
+
+     手元にあるはずの数（帳簿）＝ 未抽選 + 保有中 + 発送待ち + 轉換済。
+     **引かれても現物は動かない。**出荷して初めて手元から消える。
+     轉換済（點數に換えた分）は利用者に渡らないので、こちらの手元に残る。 */
+  const INV = {
+    g_1: {
+      S:{ held:0, pend:1, conv:0,  ship:0,  cnt:2  },
+      A:{ held:2, pend:0, conv:0,  ship:6,  cnt:2  },
+      B:{ held:9, pend:3, conv:0,  ship:13, cnt:16 },   // 帳簿17 → 1枚足りない
+      C:{ held:6, pend:5, conv:14, ship:23, cnt:37 },
+      D:{ held:5, pend:8, conv:26, ship:36, cnt:64 }
+    },
+    g_2: {
+      S:{ held:0, pend:0, conv:0,  ship:0,  cnt:1  },
+      A:{ held:2, pend:1, conv:0,  ship:2,  cnt:7  },
+      B:{ held:7, pend:3, conv:5,  ship:15, cnt:33 },
+      C:{ held:8, pend:4, conv:20, ship:24, cnt:67 },   // 帳簿66 → 1枚多い
+      D:{ held:10,pend:6, conv:45, ship:36, cnt:null }  // 未棚卸
+    },
+    g_3: {
+      S:{ held:0, pend:0, conv:0,  ship:2,  cnt:0  },
+      A:{ held:1, pend:0, conv:0,  ship:5,  cnt:1  },
+      B:{ held:2, pend:1, conv:3,  ship:10, cnt:6  },
+      C:{ held:3, pend:0, conv:12, ship:9,  cnt:15 },
+      D:{ held:4, pend:1, conv:18, ship:9,  cnt:23 }
+    }
+  };
+  const COUNTED_AT = "2026-08-10";
+
+  const inv = (pid, rank) => INV[pid]?.[rank] ?? { held:0, pend:0, conv:0, ship:0, cnt:null };
+  /* 手元にあるべき数。出荷済だけを除く */
+  const onHand = (z, v) => z.stock + v.held + v.pend + v.conv;
+
+  function renderStock(){
+    $("#countedAt").textContent = `最終棚卸 ${COUNTED_AT}`;
+
+    $("#stockRows").innerHTML = PACKS.map(p => {
+      const head = `<tr class="grp"><td colspan="9">${esc(p.name)}
+        <span class="r">v${p.version}・${p.status}・未抽選 ${fmt(p.stock)} / ${fmt(p.total)}</span></td></tr>`;
+      const rows = p.prizes.map(z => {
+        const v = inv(p.id, z.rank);
+        const book = onHand(z, v);
+        const d = v.cnt === null ? null : v.cnt - book;
+        const dCell = d === null
+          ? `<span class="pill mute">未実施</span>`
+          : `<span class="diff ${d === 0 ? "zero" : d < 0 ? "minus" : "plus"}">${d > 0 ? "+" : ""}${d}</span>`;
+        /* 在庫0なのに確率が残っている＝出ない賞を出ると表示している状態 */
+        const dead = z.stock === 0 && z.prob > 0 && p.status === "公開中";
+        return `<tr>
+          <td><span class="rk ${z.rank}">${z.rank}</span></td>
+          <td>${esc(z.name)}${dead ? ` <span class="pill bad">在庫0で公開中</span>` : ""}</td>
+          <td class="n">${fmt(z.stock)}</td>
+          <td class="sub">${v.held}</td>
+          <td class="sub">${v.pend}</td>
+          <td class="n"><b>${fmt(book)}</b></td>
+          <td class="n"><input class="cnt" inputmode="numeric" data-p="${p.id}" data-r="${z.rank}"
+                                value="${v.cnt === null ? "" : v.cnt}" placeholder="—"></td>
+          <td class="n">${dCell}</td>
+          <td class="sub">${v.ship}</td>
+        </tr>`;
+      }).join("");
+      return head + rows;
+    }).join("");
+
+    /* 在庫0のまま公開されている等級。転蛋法の獎項表示に直接ひびく */
+    const dead = PACKS.filter(p => p.status === "公開中")
+      .flatMap(p => p.prizes.filter(z => z.stock === 0 && z.prob > 0).map(z => `${p.name} ${z.rank}`));
+
+    /* 差異のある賞品 */
+    let gap = 0, uncounted = 0;
+    PACKS.forEach(p => p.prizes.forEach(z => {
+      const v = inv(p.id, z.rank);
+      if (v.cnt === null) { uncounted++; return; }
+      if (v.cnt - onHand(z, v) !== 0) gap++;
+    }));
+
+    /* 保底（最低保証）の引当。ここが尽きると「必ず何か当たる」が履行できず、
+       賭博罪の構成要件を外す根拠そのものが崩れる */
+    const guar = PACKS.filter(p => p.status === "公開中")
+      .map(p => ({ name:p.name, n:p.prizes[p.prizes.length - 1].stock }))
+      .sort((a, b) => a.n - b.n)[0];
+
+    $("#stockKpis").innerHTML = [
+      { l:"在庫0で公開中の等級", v:dead.length, s:dead.length ? dead.join(" / ") : "なし", alert:dead.length > 0 },
+      { l:"棚卸の差異", v:gap, s:`未実施 ${uncounted} 件`, alert:gap > 0 },
+      { l:"保底の引当（最少）", v:guar ? fmt(guar.n) : "—", s:guar ? guar.name : "", alert:guar && guar.n < 30 },
+      { l:"最終棚卸", v:COUNTED_AT.slice(5), s:"月次で実施" }
+    ].map(k => `<div class="kpi${k.alert ? " alert" : ""}">
+        <div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${esc(k.s)}</div></div>`).join("");
+  }
+
+  /* 棚卸値を打ち直したら、その場で差異を出す。保存は別（記録に残す操作だから） */
+  $("#stockRows").addEventListener("input", e => {
+    const el = e.target.closest(".cnt"); if (!el) return;
+    const v = inv(el.dataset.p, el.dataset.r);
+    v.cnt = el.value.trim() === "" ? null : (parseInt(el.value, 10) || 0);
+    const sel = document.activeElement;
+    renderStock();
+    const again = $(`.cnt[data-p="${sel.dataset.p}"][data-r="${sel.dataset.r}"]`);
+    if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+  });
+
+  const MOVES = [
+    { at:"08-10", pack:"噴火龍 ex 決戰包", item:"皮卡丘 V",     kind:"adjust", n:-1,  by:"平田",
+      memo:"棚卸差異。原因調査中（出荷伝票と照合予定）" },
+    { at:"08-10", pack:"—",               item:"—",            kind:"count",  n:0,   by:"平田", memo:"月次棚卸を実施" },
+    { at:"08-09", pack:"海賊王 世界最強戰士", item:"一般卡 隨機", kind:"in",  n:60,  by:"平田", memo:"追加仕入" },
+    { at:"08-09", pack:"噴火龍 ex 決戰包", item:"（一括）",      kind:"out",   n:-12, by:"平田", memo:"出荷 u_1f41 ほか" },
+    { at:"08-08", pack:"噴火龍 ex 決戰包", item:"（一括）",      kind:"in",    n:200, by:"平田", memo:"v3 公開に伴う初期投入" },
+    { at:"08-07", pack:"25 週年紀念收藏",  item:"（一括）",      kind:"out",   n:-9,  by:"平田", memo:"出荷" }
+  ];
+  const MV = { in:["入庫","ok"], out:["出荷","mute"], adjust:["棚卸調整","bad"], count:["棚卸","blue"] };
+
+  function renderMoves(){
+    $("#moves").innerHTML = MOVES.map(m => {
+      const [label, cls] = MV[m.kind];
+      return `<tr>
+        <td class="mono">${m.at}</td>
+        <td>${esc(m.pack)}</td>
+        <td>${esc(m.item)}</td>
+        <td><span class="pill ${cls}">${label}</span></td>
+        <td class="n">${m.n === 0 ? "—" : (m.n > 0 ? "+" : "") + fmt(m.n)}</td>
+        <td>${esc(m.by)}</td>
+        <td class="mono">${esc(m.memo)}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  $("#btnInbound").addEventListener("click", () => {
+    alert("入庫を記録します。\n\n"
+      + "・stock_left を増やす\n"
+      + "・audit_log に誰が何をいくつ入れたかを残す\n\n"
+      + "※ 確率は変わらないので版は切りません。\n"
+      + "　ただし獎項の数量を公開している場合は、表示の更新が要ります。\n\n（原型では未接続）");
+  });
+  $("#btnCount").addEventListener("click", () => {
+    alert("棚卸を確定します。\n\n"
+      + "・差異のある行を stock_adjust として記録（帳簿は上書きしない）\n"
+      + "・調整には理由の入力を必須にする\n"
+      + "・audit_log に残す\n\n"
+      + "※ 差異を黙って合わせると、盗難・二重出荷・抽選の不具合の\n"
+      + "　どれが起きたのか分からなくなります。\n\n（原型では未接続）");
+  });
+
   /* ── ナビ ───────────────────────────────── */
   $("#nav").addEventListener("click", e => {
     const a = e.target.closest("a"); if (!a) return;
@@ -549,7 +772,8 @@
     $("#v-" + a.dataset.v).classList.add("on");
   });
 
-  renderPackList(); renderOdds(); renderAudit(); renderLogs(); renderShips();
+  renderPackList(); renderOdds(); renderStock(); renderMoves();
+  renderAudit(); renderLogs(); renderShips();
 
   // ?v=audit / ?v=ship で直接開く（共有と確認用）
   const v0 = new URLSearchParams(location.search).get("v");
