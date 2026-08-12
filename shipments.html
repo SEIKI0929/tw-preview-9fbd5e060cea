@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>寄送狀態 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* E3 配送追跡 ＋ E4 發送履歴。mypage の「寄送狀態」から来る。
+
+     **この画面の主役は追跡番号ではなく、七日解除權の残り日数。**
+     起算点は「利用者が受け取った日」なので、受領日が入るまでカウントは始まらない。
+     ship.html（申請）で告知した内容と、ここで見せる内容は必ず一致させること。
+     食い違うと、告知した意味がなくなる。
+
+     配色・寸法は mypage.html / logs.html に合わせている。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --green:#1E7A4D; --amber:#A85D00; --blue:#1B5FD0;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(40px + var(--safe))}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  a{text-decoration:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 6px 0 4px;
+      display:flex; align-items:center; gap:2px; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .bk{width:44px; height:44px; display:grid; place-items:center; flex:0 0 auto}
+  .hd .ttl{font-size:15px; font-weight:800}
+
+  .sec{background:#fff; margin:12px; border-radius:12px; overflow:hidden;
+       box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .sec > h2{margin:0; padding:12px 14px 10px; font-size:12px; font-weight:800; color:var(--sub);
+            letter-spacing:.05em; border-bottom:1px solid var(--line);
+            display:flex; align-items:center; gap:8px}
+  .sec > h2 .r{margin-left:auto; font-weight:700; font-size:10.5px}
+
+  /* 1件分 */
+  .sp{padding:14px; border-bottom:1px solid var(--line)}
+  .sp:last-child{border-bottom:none}
+  .sp .top{display:flex; align-items:flex-start; gap:10px}
+  .sp .top .tx{flex:1; min-width:0}
+  .sp .top b{display:block; font-size:14px; font-weight:800}
+  .sp .top small{display:block; font-size:10.5px; color:var(--sub); margin-top:3px; line-height:1.6}
+  .dt{font-family:var(--mono); font-size:10.5px; color:var(--sub)}
+
+  .pill{display:inline-block; font-size:10px; font-weight:800; border-radius:999px;
+        padding:3px 9px; white-space:nowrap}
+  .pill.ok{background:#E7F5EC; color:var(--green)}
+  .pill.warn{background:#FFF3E0; color:var(--amber)}
+  .pill.mute{background:#F2EFE9; color:var(--sub)}
+  .pill.blue{background:#EAF1FC; color:var(--blue)}
+
+  /* 進捗 */
+  .steps{display:grid; grid-template-columns:repeat(4,1fr); margin:14px 0 4px; position:relative}
+  .steps .st{text-align:center; position:relative}
+  .steps .st .dot{width:15px; height:15px; border-radius:50%; background:#E6E1DA; margin:0 auto 6px;
+                  position:relative; z-index:2; display:grid; place-items:center}
+  .steps .st .dot svg{width:9px; height:9px; color:#fff; opacity:0}
+  .steps .st .lb{font-size:10px; font-weight:700; color:#B8B0A6; line-height:1.4}
+  .steps .st::before{content:""; position:absolute; top:7px; left:-50%; width:100%; height:2px;
+                     background:#E6E1DA; z-index:1}
+  .steps .st:first-child::before{display:none}
+  .steps .st.done .dot{background:var(--green)}
+  .steps .st.done .dot svg{opacity:1}
+  .steps .st.done .lb{color:var(--ink)}
+  .steps .st.done::before{background:var(--green)}
+  .steps .st.now .dot{background:var(--red); box-shadow:0 0 0 4px rgba(236,30,78,.18)}
+  .steps .st.now .lb{color:var(--red); font-weight:800}
+
+  /* 追跡 */
+  .track{margin-top:12px; padding:10px 12px; border-radius:9px; background:#FAF7F1;
+         display:flex; align-items:center; gap:10px}
+  .track .l{font-size:10.5px; font-weight:700; color:var(--sub); flex:0 0 auto}
+  .track .no{flex:1; min-width:0; font-family:var(--mono); font-size:12.5px; font-weight:700;
+             overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .track button{font-size:11px; font-weight:800; color:var(--blue); flex:0 0 auto;
+                background:#EAF1FC; border-radius:7px; padding:6px 10px}
+
+  /* 解除権 */
+  .wd{margin-top:12px; padding:12px 13px; border-radius:10px; font-size:11.5px; line-height:1.75}
+  .wd.live{background:#FFF6E0; border:1px solid #F3DFAE; color:#5A4113}
+  .wd.wait{background:#F6F3ED; border:1px solid var(--line); color:var(--sub)}
+  .wd.over{background:#F2EFE9; border:1px solid var(--line); color:var(--sub)}
+  .wd .hl{display:flex; align-items:baseline; gap:7px; margin-bottom:5px}
+  .wd .hl b{font-size:13px; font-weight:800}
+  .wd .hl .d{font-size:20px; font-weight:900; font-variant-numeric:tabular-nums; color:var(--red)}
+  .wd .act{margin-top:9px; width:100%; padding:11px; border-radius:9px; background:var(--red);
+           color:#fff; font-size:13px; font-weight:800}
+  .wd .ver{margin-top:7px; font-size:10px; color:var(--sub); font-family:var(--mono)}
+
+  .note{margin:12px; padding:13px 14px; border-radius:12px; font-size:11.5px; line-height:1.85;
+        background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.95); color:#5A4113}
+  .note b{color:#3C2A0C}
+  .note.strong{background:#FFF6E0; border-color:#F3DFAE}
+
+  .empty{padding:30px 14px; text-align:center; font-size:12.5px; color:var(--sub); line-height:1.8}
+  .empty a{color:var(--red); font-weight:800}
+
+  #toast{position:fixed; left:50%; bottom:calc(28px + var(--safe));
+         transform:translateX(-50%) translateY(8px);
+         background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700;
+         padding:10px 18px; border-radius:999px; z-index:100; max-width:88%; text-align:center;
+         opacity:0; pointer-events:none; transition:opacity .22s, transform .22s}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <a class="bk" href="./mypage.html" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span class="ttl">寄送狀態</span>
+  </header>
+
+  <section class="sec">
+    <h2>進行中 <span class="r" id="nLive">—</span></h2>
+    <div id="live"></div>
+  </section>
+
+  <section class="sec">
+    <h2>已完成 <span class="r" id="nDone">—</span></h2>
+    <div id="done"></div>
+  </section>
+
+  <p class="note strong">
+    <b>七日解除權的起算日，是您實際收到商品的那一天。</b>
+    不是申請日，也不是出貨日。<br>
+    <b>在我們確認送達之前，七天不會開始計算</b>，所以您的權利不會因為配送延遲而縮短。
+  </p>
+
+  <p class="note">
+    <b>已拆封的卡片仍然可以解除契約。</b>不需要說明理由。<br>
+    但商品毀損或滅失時，可能須負擔相當之費用。<br>
+    解除後，已扣除的寄送手續費會以點數返還。<b>解除的申請由客服人員與您聯繫後續。</b>
+  </p>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+
+  /* 今日。実装ではサーバーの日付を使う。
+     端末の時計で解除期限を出すと、時計をずらせば期限を延ばせてしまう */
+  const TODAY = new Date("2026-08-12T00:00:00");
+
+  const STEPS = [
+    { k:"requested", lb:"申請受付" },
+    { k:"preparing", lb:"出貨準備" },
+    { k:"shipped",   lb:"已出貨"  },
+    { k:"delivered", lb:"已送達"  }
+  ];
+
+  const SHIPS = [
+    { id:"s_2418", at:"2026-08-10", n:12, fee:60, st:"shipped",
+      carrier:"7-ELEVEN 超商取貨", to:"台北中正門市", track:"F1234567890",
+      deliv:null, terms:"ship-v1.0" },
+    { id:"s_2301", at:"2026-08-04", n:3, fee:60, st:"delivered",
+      carrier:"黑貓宅急便", to:"臺北市 中正區", track:"9876543210",
+      deliv:"2026-08-06", terms:"ship-v1.0" },
+    { id:"s_2107", at:"2026-07-20", n:5, fee:60, st:"delivered",
+      carrier:"黑貓宅急便", to:"臺北市 中正區", track:"9812345678",
+      deliv:"2026-07-23", terms:"ship-v1.0" }
+  ];
+
+  /* 解除権の残り日数。**受領日が無ければ計算しない。**
+     ここで申請日や出荷日を使うと、起算点の説明と食い違う */
+  function deadline(deliv){
+    const end = new Date(deliv + "T00:00:00");
+    end.setDate(end.getDate() + 7);
+    return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}`
+         + `-${String(end.getDate()).padStart(2, "0")}`;
+  }
+  function daysLeft(deliv){
+    if (!deliv) return null;
+    return Math.ceil((new Date(deadline(deliv) + "T00:00:00") - TODAY) / 86400000);
+  }
+
+  const CHK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l6 6L20 6"/></svg>`;
+
+  function steps(st){
+    const i = STEPS.findIndex(s => s.k === st);
+    return `<div class="steps">${STEPS.map((s, n) => {
+      const cls = n < i ? "done" : n === i ? (st === "delivered" ? "done" : "now") : "";
+      return `<div class="st ${cls}"><div class="dot">${CHK}</div><div class="lb">${s.lb}</div></div>`;
+    }).join("")}</div>`;
+  }
+
+  function withdrawal(s){
+    const d = daysLeft(s.deliv);
+    if (d === null) {
+      return `<div class="wd wait">
+        <b>七日解除權尚未開始計算。</b><br>
+        我們確認您收到商品之後，才會開始計算七天。
+        <div class="ver">${s.terms}</div>
+      </div>`;
+    }
+    if (d > 0) {
+      return `<div class="wd live">
+        <div class="hl"><b>可以解除契約</b><span class="d">剩 ${d} 天</span></div>
+        收到日 ${s.deliv} ・ 期限 ${deadline(s.deliv)}<br>
+        <b>無須說明理由。</b>已拆封也可以。
+        <button class="act" data-wd="${s.id}">申請解除契約</button>
+        <div class="ver">${s.terms}</div>
+      </div>`;
+    }
+    return `<div class="wd over">
+      七日解除權已於 <b>收到日 ${s.deliv} 起七日</b>屆滿。
+      <div class="ver">${s.terms}</div>
+    </div>`;
+  }
+
+  function card(s){
+    const d = daysLeft(s.deliv);
+    const badge = s.st !== "delivered" ? `<span class="pill blue">配送中</span>`
+      : d > 0 ? `<span class="pill warn">可解除 剩 ${d} 天</span>`
+      : `<span class="pill ok">已完成</span>`;
+    return `<div class="sp">
+      <div class="top">
+        <div class="tx">
+          <b>${fmt(s.n)} 張 ${badge}</b>
+          <small>
+            ${esc(s.carrier)} ・ ${esc(s.to)}<br>
+            申請 <span class="dt">${s.at}</span>
+            ${s.deliv ? ` ・ 收到 <span class="dt">${s.deliv}</span>` : ""}
+            ・ 手續費 ${fmt(s.fee)} PT
+          </small>
+        </div>
+      </div>
+      ${steps(s.st)}
+      <div class="track">
+        <span class="l">追蹤號碼</span>
+        <span class="no">${esc(s.track)}</span>
+        <button data-copy="${esc(s.track)}">複製</button>
+      </div>
+      ${withdrawal(s)}
+    </div>`;
+  }
+
+  function render(){
+    const live = SHIPS.filter(s => s.st !== "delivered");
+    /* 解除できる期間が残っているものは「完了」に埋もれさせない。
+       権利があることに気づかないまま期限が切れるのを避ける */
+    const open = SHIPS.filter(s => s.st === "delivered" && daysLeft(s.deliv) > 0);
+    const past = SHIPS.filter(s => s.st === "delivered" && !(daysLeft(s.deliv) > 0));
+
+    const top = [...live, ...open];
+    $("#nLive").textContent = `${top.length} 筆`;
+    $("#nDone").textContent = `${past.length} 筆`;
+    $("#live").innerHTML = top.length ? top.map(card).join("")
+      : `<div class="empty">目前沒有進行中的寄送。<br><a href="./cards.html">前往我的卡片</a></div>`;
+    $("#done").innerHTML = past.length ? past.map(card).join("")
+      : `<div class="empty">尚無紀錄。</div>`;
+  }
+
+  document.addEventListener("click", e => {
+    const c = e.target.closest("[data-copy]");
+    if (c) {
+      navigator.clipboard?.writeText(c.dataset.copy);
+      toast("已複製追蹤號碼");
+      return;
+    }
+    const w = e.target.closest("[data-wd]");
+    if (w) toast("解除契約的申請（原型尚未串接）");
+  });
+
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 2000);
+  }
+
+  render();
+})();
+</script>
+</body></html>

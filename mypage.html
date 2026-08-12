@@ -211,7 +211,7 @@
 
   $("#mCards").innerHTML = [
     { icon:"🃏", title:"我的卡片", desc:"轉換點數・申請寄送", href:"./cards.html", n:USER.cardsHeld },
-    { icon:"📦", title:"寄送狀態", desc:"追蹤號碼與配送進度", act:"ship", n:USER.shipping }
+    { icon:"📦", title:"寄送狀態", desc:"追蹤號碼與七日解除權", href:"./shipments.html", n:USER.shipping }
   ].map(row).join("");
 
   $("#mLogs").innerHTML = [
