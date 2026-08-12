@@ -1,12 +1,15 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>登入・註冊 — DOPA 台灣</title>
 </head><body>
 <style>
   /* A1 註冊 / A2 登入。台湾は LINE の普及率が高いので主導線に置く。
-     註冊時に年齢確認を取る（未成年の課金は争点になりうる）。
+     **18歳未満は登録させない**（2026-08-12 平田確定）。
+     台湾は2023-01-01の民法改正で成年が18歳。つまり「18歳未満お断り」＝「未成年お断り」で、
+     法定代理人同意の仕組みそのものが要らなくなる。
+     未成年の課金は取消しの対象になりうるので、入り口で止める。
      規約同意は consent_log（kind=purchase_terms とは別の版）に残す前提。 */
   :root{
     --bg1:#FFD233; --bg2:#FF9A1F;
@@ -144,7 +147,8 @@
     <!-- A1 註冊 -->
     <div class="pane" id="p-signup" hidden>
       <button class="sso" data-sso="signup"><span class="ic">L</span>使用 LINE 註冊</button>
-      <p class="ssohint">30 秒完成。註冊即贈體驗點數。</p>
+      <p class="ssohint">30 秒完成。註冊即贈體驗點數。<br>
+        <b>本服務僅限滿 18 歲以上使用</b>，使用 LINE 註冊時也會請您確認出生年月日。</p>
 
       <div class="or">或使用電子郵件</div>
 
@@ -165,7 +169,7 @@
       <div class="f">
         <label for="sBirth">出生年月日<span class="req">*</span></label>
         <input id="sBirth" type="date" autocomplete="bday">
-        <p class="hint">用於確認年齡。未滿 18 歲須經法定代理人同意。</p>
+        <p class="hint"><b>本服務僅限滿 18 歲以上使用。</b>用於確認年齡。</p>
         <p class="err" id="sBirthErr" hidden></p>
       </div>
 
@@ -173,9 +177,9 @@
         <input type="checkbox" id="sTerms">
         <span>我已閱讀並同意<a href="#" id="openTerms">服務條款</a>與<a href="#" id="openPrivacy">隱私權政策</a>。</span>
       </label>
-      <label class="agree" for="sGuardian" id="guardianWrap" hidden>
-        <input type="checkbox" id="sGuardian">
-        <span>我未滿 18 歲，並已取得法定代理人的同意。</span>
+      <label class="agree" for="sAge">
+        <input type="checkbox" id="sAge">
+        <span>我確認自己<b>已滿 18 歲</b>。</span>
       </label>
 
       <button class="submit" id="signupBtn" disabled>建立帳戶</button>
@@ -257,37 +261,42 @@
     $("#sEmailErr").hidden = eOk;  $("#sEmail").setAttribute("aria-invalid", String(!eOk));
     $("#sPwErr").hidden    = pOk;  $("#sPw").setAttribute("aria-invalid", String(!pOk));
 
+    /* 18歳未満は登録させない（2026-08-12 平田確定）。
+       台湾は2023-01-01の民法改正で成年が18歳になったので、
+       「18歳未満お断り」＝「未成年お断り」。法定代理人同意の仕組みそのものが要らない。
+       未成年の課金は取消しの対象になりうるが、そもそも入り口で止める。 */
     const age = ageFrom(birth);
     const minor = age !== null && age < 18;
-    const tooYoung = age !== null && age < 7;      // 台湾民法：7歳未満は無行為能力
-    $("#guardianWrap").hidden = !minor || tooYoung;
-    if (!minor) $("#sGuardian").checked = false;
 
     const bErr = $("#sBirthErr");
     if (age === null && birth !== "") { bErr.hidden = false; bErr.textContent = "請輸入正確的日期。"; }
-    else if (tooYoung) { bErr.hidden = false; bErr.textContent = "很抱歉，未滿 7 歲無法使用本服務。"; }
+    else if (minor) { bErr.hidden = false; bErr.textContent = "很抱歉，本服務僅限滿 18 歲以上使用。"; }
     else bErr.hidden = true;
 
-    const ok = emailOk(email) && pwOk(pw) && age !== null && !tooYoung
-            && $("#sTerms").checked && (!minor || $("#sGuardian").checked);
+    const ok = emailOk(email) && pwOk(pw) && age !== null && !minor
+            && $("#sTerms").checked && $("#sAge").checked;
     const btn = $("#signupBtn");
     btn.disabled = !ok;
-    btn.textContent = (minor && !$("#sGuardian").checked && !tooYoung)
-      ? "請確認法定代理人同意" : "建立帳戶";
+    btn.textContent = minor ? "未滿 18 歲無法註冊" : "建立帳戶";
   }
   ["sEmail","sPw","sBirth"].forEach(id => $("#" + id).addEventListener("input", vSignup));
-  ["sTerms","sGuardian"].forEach(id => $("#" + id).addEventListener("change", vSignup));
+  ["sTerms","sAge"].forEach(id => $("#" + id).addEventListener("change", vSignup));
 
   $("#signupBtn").addEventListener("click", () => {
     if ($("#signupBtn").disabled) return;
     /* 本番：user を作り、consent_log に kind=purchase_terms 相当（terms版）と
-       kind=age_check を1件ずつ書く。未成年なら guardian 同意も記録する */
+       kind=age_check を1件ずつ書く。**入力された生年月日も併せて残す。**
+       後から「18歳未満だった」と分かったときに、
+       本人が何を申告して登録したのかを示せる必要がある */
     toast(`consent_log(${TERMS_DOC.version} / age_check) → user 作成（原型未串接）`);
     setTimeout(() => location.href = "./mypage.html", 1200);
   });
 
   document.addEventListener("click", e => {
     const b = e.target.closest("[data-sso]"); if (!b) return;
+    /* **LINE Login からは生年月日が取れない。**
+       SSO で登録する場合も、この後に生年月日と18歳以上の確認を必ず挟むこと。
+       ここを通すと、メール登録だけ年齢確認があってSSOは素通り、という穴になる */
     toast("LINE Login へ（原型未串接）");
   });
 
@@ -304,7 +313,8 @@
       <p><b>實體寄送</b></p>
       <p>可另行申請實體寄送。<b>自收到商品之日起七日內</b>可依第19條解除契約。</p>
       <p><b>年齡</b></p>
-      <p>未滿 18 歲須經法定代理人同意。未滿 7 歲無法使用。</p>
+      <p><b>本服務僅限滿 18 歲以上使用。</b>未滿 18 歲不得註冊或使用。
+         若發現以不實年齡註冊，本服務得停止其使用並終止契約。</p>
       <p style="color:#8A8178">版本 ${TERMS_DOC.version}（${TERMS_DOC.updated}）</p>` },
     openPrivacy: { t:"隱私權政策（摘要）", b:`
       <p>本服務蒐集之個人資料，依個人資料保護法處理與利用。</p>

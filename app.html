@@ -143,6 +143,18 @@
   .oddsbar .tx{flex:1; font-size:13px; font-weight:800}
   .oddsbar svg{color:#C9C1B6; flex:0 0 auto}
 
+  /* 18歳以上限定。首頁で必ず目に入る位置に置く */
+  .agegate{
+    display:flex; align-items:center; gap:8px; margin:8px 10px 0; padding:9px 13px;
+    background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.95);
+    border-radius:10px; font-size:11.5px; font-weight:700; color:#5A4113;
+  }
+  .agegate .badge{
+    font:900 11px/1 var(--tc); color:#fff; background:#C4103A; border-radius:4px;
+    padding:4px 7px; flex:0 0 auto; letter-spacing:.02em;
+  }
+  .agegate b{color:#3C2A0C}
+
   /* ── セクション見出し ───────────────────────── */
   .lead{
     text-align:center; font-size:14px; font-weight:900; color:#7A3D00;
@@ -288,6 +300,10 @@
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
          stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
   </a>
+
+  <!-- 18歳以上限定（2026-08-12 確定）。**入り口で必ず見える場所に置く。**
+       規約の中だけに書いても、見ていないと言われれば争いになる -->
+  <p class="agegate"><span class="badge">18+</span>本服務僅限<b>滿 18 歲以上</b>使用。</p>
 
   <p class="lead">🚀 註冊會員限定！現在最超值的抽卡 🚀</p>
 

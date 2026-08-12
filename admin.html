@@ -427,9 +427,8 @@
           </select>
           <select id="fAge">
             <option value="">全年齢区分</option>
-            <option value="adult">成人</option>
-            <option value="minor">未成年（同意済）</option>
-            <option value="pending">未成年（同意待ち）</option>
+            <option value="adult">確認済</option>
+            <option value="unverified">年齢未確認</option>
           </select>
           <span class="sp" id="userCount">—</span>
         </div>
@@ -445,10 +444,12 @@
       </div>
 
       <div class="callout warn">
-        <b>未成年は「同意待ち」のまま課金させないこと。</b>
-        台湾民法では未成年者の法律行為に法定代理人の同意が要ります。
-        <b>7歳未満は無行為能力</b>で、そもそも登録させません（`auth.html` で止めています）。
-        同意の取得は<b>いつ・どの文面で取ったかまで記録</b>してください（`consent_log`）。
+        <b>本サービスは18歳以上限定です</b>（2026-08-12 確定）。
+        台湾は2023年の民法改正で成年が18歳になったため、<b>18歳未満お断り＝未成年お断り</b>で、
+        法定代理人同意の仕組みは持ちません。登録は `auth.html` で止めています。<br>
+        <b>ただし止められるのは自己申告までです。</b>
+        年齢を偽って登録された場合に備え、<b>申告された生年月日と同意の記録を残してください</b>（`consent_log`）。
+        発覚したときに、本人が何を申告したのかを示せる必要があります。
       </div>
 
       <div class="callout info">
@@ -898,20 +899,22 @@
   /* ── H5 会員 ─────────────────────────────────
      個人資料そのものはここに出さない。一覧に要るのは「判断に使う数字と状態」だけ。
      氏名・住所・連絡先を一覧に並べると、用のない情報まで毎回画面に出ることになる。 */
-  const AGE = { adult:["成人","mute"], minor:["未成年（同意済）","blue"], pending:["未成年（同意待ち）","bad"] };
+  /* 18歳未満は登録できないので、区分は「確認済」か「未確認」の2つだけ。
+     未確認が残るのは SSO で登録して生年月日をまだ入れていない場合 */
+  const AGE = { adult:["確認済","mute"], unverified:["年齢未確認","bad"] };
   const UST = { active:["利用中","ok"], frozen:["凍結中","warn"], erasing:["削除請求中","bad"] };
 
   const USERS = [
     { id:"u_1f41", joined:"2026-07-12", age:"adult",   auth:"LINE",  pt:1240, paid:3500, draws:47, held:12, st:"active" },
     { id:"u_2a08", joined:"2026-07-20", age:"adult",   auth:"LINE",  pt:0,    paid:1200, draws:15, held:3,  st:"active" },
-    { id:"u_3c77", joined:"2026-07-28", age:"minor",   auth:"LINE",  pt:300,  paid:900,  draws:11, held:24, st:"active" },
-    { id:"u_4b90", joined:"2026-08-02", age:"pending", auth:"email", pt:0,    paid:0,    draws:0,  held:0,  st:"active" },
+    { id:"u_3c77", joined:"2026-07-28", age:"adult",      auth:"LINE",  pt:300,  paid:900,  draws:11, held:24, st:"active" },
+    { id:"u_4b90", joined:"2026-08-02", age:"unverified", auth:"LINE",  pt:0,    paid:0,    draws:0,  held:0,  st:"active" },
     { id:"u_5d12", joined:"2026-08-04", age:"adult",   auth:"LINE",  pt:5600, paid:9000, draws:88, held:8,  st:"active" },
     { id:"u_6e55", joined:"2026-08-06", age:"adult",   auth:"email", pt:120,  paid:500,  draws:6,  held:1,  st:"frozen" },
     { id:"u_7f31", joined:"2026-08-08", age:"adult",   auth:"LINE",  pt:800,  paid:2000, draws:22, held:5,  st:"erasing" },
-    { id:"u_8a2c", joined:"2026-08-09", age:"minor",   auth:"LINE",  pt:150,  paid:300,  draws:4,  held:2,  st:"active" },
+    { id:"u_8a2c", joined:"2026-08-09", age:"adult",      auth:"LINE",  pt:150,  paid:300,  draws:4,  held:2,  st:"active" },
     { id:"u_9b47", joined:"2026-08-10", age:"adult",   auth:"LINE",  pt:2400, paid:4000, draws:31, held:9,  st:"active" },
-    { id:"u_a013", joined:"2026-08-11", age:"pending", auth:"LINE",  pt:0,    paid:0,    draws:0,  held:0,  st:"active" }
+    { id:"u_a013", joined:"2026-08-11", age:"unverified", auth:"LINE",  pt:0,    paid:0,    draws:0,  held:0,  st:"active" }
   ];
 
   function renderUsers(){
@@ -935,12 +938,12 @@
       </tr>`;
     }).join("");
 
-    const pending = USERS.filter(u => u.age === "pending").length;
+    const pending = USERS.filter(u => u.age === "unverified").length;
     const erasing = USERS.filter(u => u.st === "erasing").length;
     const frozen  = USERS.filter(u => u.st === "frozen").length;
     $("#userKpis").innerHTML = [
       { l:"会員", v:fmt(512), s:"今月の新規 87" },
-      { l:"未成年（同意待ち）", v:pending, s:"課金させないこと", alert:pending > 0 },
+      { l:"年齢未確認", v:pending, s:"確認まで課金させない", alert:pending > 0 },
       { l:"個資の削除請求", v:erasing, s:"抽選ログは消さない", alert:erasing > 0 },
       { l:"凍結中", v:frozen, s:"不正の疑い・本人申告" }
     ].map(k => `<div class="kpi${k.alert ? " alert" : ""}">

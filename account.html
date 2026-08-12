@@ -251,18 +251,17 @@
      実装ではサーバーから伏せ字を返し、実値は別のリクエストで取る */
   const ME = {
     nick:"王小明", id:"u_8f2a41", joined:"2026-07-12", level:"白銀會員",
-    age:"adult",                                   // adult | minor | pending
+    age:"adult",                                   // adult | unverified
     email:{ mask:"w••••@gmail.com", real:"wang.ming@gmail.com" },
     phone:{ mask:"09••-•••-123",     real:"0912-345-123" },
     login:"LINE", lineName:"小明", pw:false
   };
 
+  /* 18歳未満は登録できないので、状態は「確認済み」か「未確認」の2つだけ。
+     未確認が残るのは SSO で登録して生年月日をまだ入れていない場合 */
   const AGE = {
-    adult:   ["已完成年齡確認", "ok",   "已確認為滿 18 歲。"],
-    minor:   ["未成年（已取得同意）", "blue",
-              "已取得法定代理人同意。單次與每月的購買金額設有上限。"],
-    pending: ["等待法定代理人同意", "warn",
-              "在取得同意之前無法購買點數。"]
+    adult:      ["已完成年齡確認", "ok",   "本服務僅限滿 18 歲以上使用。"],
+    unverified: ["等待年齡確認",   "warn", "完成確認之前無法購買點數。"]
   };
 
   function fld(l, v, sub, go){

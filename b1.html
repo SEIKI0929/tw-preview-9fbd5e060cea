@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>購買點數 — DOPA 台灣</title>
 </head><body>
 <style>
@@ -111,6 +111,29 @@
   .row .v{font-variant-numeric:tabular-nums; font-weight:800}
   .row.total .v{color:var(--red); font-size:19px}
 
+  /* 転蛋法の掲示（購買頁）と 18歳以上限定 */
+  .oddsbar{
+    display:flex; align-items:center; gap:8px; margin:12px; padding:11px 13px;
+    background:#fff; border-radius:10px; text-decoration:none; color:var(--ink);
+    box-shadow:0 2px 8px rgba(120,60,0,.16);
+  }
+  .oddsbar .req{
+    font-size:10px; font-weight:800; color:#1E7A4D; background:#EAF6EF;
+    border:1px solid #BFE3CE; border-radius:3px; padding:3px 7px; flex:0 0 auto;
+  }
+  .oddsbar .tx{flex:1; font-size:13px; font-weight:800}
+  .oddsbar svg{color:#C9C1B6; flex:0 0 auto}
+  .agegate{
+    display:flex; align-items:center; gap:8px; margin:8px 12px 0; padding:9px 13px;
+    background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.95);
+    border-radius:10px; font-size:11.5px; font-weight:700; color:#5A4113;
+  }
+  .agegate .badge{
+    font:900 11px/1 var(--tc); color:#fff; background:#C4103A; border-radius:4px;
+    padding:4px 7px; flex:0 0 auto;
+  }
+  .agegate b{color:#3C2A0C}
+
   .buybar{
     position:fixed; left:50%; transform:translateX(-50%); bottom:0; z-index:60;
     width:100%; max-width:480px; background:#fff; border-top:1px solid var(--line);
@@ -192,6 +215,16 @@
       <div class="row total"><span>應付金額</span><span class="v" id="sTotal">—</span></div>
     </div>
   </section>
+
+  <!-- 転蛋法は「首頁・登入頁・購買頁」への掲示を求める。ここが購買頁の掲示。
+       18歳以上限定も、購入の直前でもう一度出す（2026-08-12 確定） -->
+  <a class="oddsbar" href="./odds.html">
+    <span class="req">依法揭露</span>
+    <span class="tx">中獎機率一覽</span>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </a>
+  <p class="agegate"><span class="badge">18+</span>本服務僅限<b>滿 18 歲以上</b>使用。</p>
 </div>
 
 <div class="buybar">
