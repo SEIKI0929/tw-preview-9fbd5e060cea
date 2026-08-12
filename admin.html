@@ -138,6 +138,7 @@
   .bar .nums{font-family:var(--mono); font-size:11.5px; color:var(--sub); text-align:right;
              font-variant-numeric:tabular-nums}
   .bar .nums b{color:var(--ink)}
+  .bar .lb{font-size:11.5px; font-weight:700; color:var(--sub)}
   .bar .nums .dev{margin-left:6px; font-weight:700}
   .dev.ok{color:var(--green)} .dev.warn{color:var(--amber)} .dev.bad{color:var(--red)}
   .legend{margin-top:12px; font-size:11.5px; color:var(--sub); line-height:1.8}
@@ -196,9 +197,9 @@
       <a href="#" data-v="stock">在庫管理</a>
       <a href="#" data-v="audit">抽選ログ監査</a>
       <a href="#" data-v="ship">出荷管理</a>
-      <div class="grp">未実装</div>
-      <a href="#" class="off">会員管理<span class="tag">H5</span></a>
-      <a href="#" class="off">売上・分析<span class="tag">H6</span></a>
+      <div class="grp">会員・数字</div>
+      <a href="#" data-v="users">会員管理</a>
+      <a href="#" data-v="sales">売上・分析</a>
     </nav>
     <div class="foot">
       表示は日本語（運営用）。<br>台湾でスタッフを雇う段階で繁体字化する。
@@ -334,6 +335,8 @@
             <span class="k" style="background:#C8BFB3"></span>実測の出現率
             <span class="k" style="background:#1E1B18; width:2px"></span>公開している確率<br>
             乖離は試行回数が少ないほど大きく出ます。<b>件数と併せて見てください。</b>
+            この例では S が 157 回中 1 回（期待 1.6 回）で、率にすると乖離 −36% ですが、
+            <b>これだけで「確率どおりに出ていない」とは言えません。</b>
             統計的な有意差の判定は実装時に決めます（二項検定を想定）。
           </p>
         </div>
@@ -389,6 +392,134 @@
           </tr></thead>
           <tbody id="ships"></tbody>
         </table></div>
+      </div>
+    </section>
+
+    <!-- H5 会員管理 -->
+    <section class="view" id="v-users">
+      <div class="head">
+        <div>
+          <h1>会員管理</h1>
+          <p class="desc">個人資料を扱う画面です。<b>開いた記録が残ります</b>。用がないときに開かないでください。</p>
+        </div>
+        <div class="act"><button class="btn ghost" id="btnUserExport">CSVで書き出し</button></div>
+      </div>
+
+      <div class="kpis" id="userKpis"></div>
+
+      <div class="callout bad">
+        <b>個資法の削除請求と、転蛋法の記録保持は衝突します。</b>
+        利用者から個人資料の削除を求められても、<b>抽選ログを消してはいけません</b>。
+        消すと「公開した確率どおりに抽選した」証明ができなくなります。
+        <b>会員の個人情報だけを消し、抽選ログには仮名の識別子を残す</b>形にしてください
+        （`u_1f41` のような値だけを残し、氏名・住所・連絡先と切り離す）。
+        <b>設計段階で分けておかないと、後から分離できません。</b>
+      </div>
+
+      <div class="card">
+        <h2>会員一覧</h2>
+        <div class="filters">
+          <select id="fSt">
+            <option value="">全状態</option>
+            <option value="active">利用中</option>
+            <option value="frozen">凍結中</option>
+            <option value="erasing">削除請求中</option>
+          </select>
+          <select id="fAge">
+            <option value="">全年齢区分</option>
+            <option value="adult">成人</option>
+            <option value="minor">未成年（同意済）</option>
+            <option value="pending">未成年（同意待ち）</option>
+          </select>
+          <span class="sp" id="userCount">—</span>
+        </div>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>会員</th><th>登録</th><th>年齢区分</th><th>認証</th>
+            <th class="n">點數残高</th><th class="n">累計課金</th>
+            <th class="sub n">抽選</th><th class="sub n">保有</th>
+            <th>状態</th><th></th>
+          </tr></thead>
+          <tbody id="users"></tbody>
+        </table></div>
+      </div>
+
+      <div class="callout warn">
+        <b>未成年は「同意待ち」のまま課金させないこと。</b>
+        台湾民法では未成年者の法律行為に法定代理人の同意が要ります。
+        <b>7歳未満は無行為能力</b>で、そもそも登録させません（`auth.html` で止めています）。
+        同意の取得は<b>いつ・どの文面で取ったかまで記録</b>してください（`consent_log`）。
+      </div>
+
+      <div class="callout info">
+        <b>管理者による點數の付与・減算は、必ず理由とともに記録します。</b>
+        補償で點數を配る運用は必ず発生しますが、
+        <b>記録のない付与ができる状態は、外から見れば「いくらでも配れる」のと同じ</b>です。
+        `point_ledger` の `reason` と `admin_adjust` を必須にしてください。
+      </div>
+    </section>
+
+    <!-- H6 売上・分析 -->
+    <section class="view" id="v-sales">
+      <div class="head">
+        <div>
+          <h1>売上・分析</h1>
+          <p class="desc">課金は台湾ドル、消費は點數。<b>2つは別の数字です</b>。混ぜて足さないでください。</p>
+        </div>
+        <div class="act"><button class="btn ghost" id="btnSalesExport">CSVで書き出し</button></div>
+      </div>
+
+      <div class="kpis" id="salesKpis"></div>
+
+      <div class="callout bad">
+        <b>売れた點數は、売上ではなく預り金です。</b>
+        利用者が點數を買った時点では、こちらはまだ何も提供していません。
+        <b>抽選に使われて初めて売上になります</b>。
+        未使用の點數は<b>負債として残り続け、サービスを終えるときに返金の問題になります</b>。
+        統一發票の発行時期（課金時）と収益の認識時期（消費時）が<b>ずれることを前提に</b>会計を組んでください。
+      </div>
+
+      <div class="card">
+        <h2>點數の流れ <span class="note">今月</span></h2>
+        <div class="pad">
+          <div class="bars" id="ptFlow"></div>
+          <p class="legend">
+            <b>発行</b>＝課金で渡した點數。<b>轉換</b>＝ハズレを點數に戻した分（こちらの持ち出し）。
+            <b>消費</b>＝抽選と發送手数料で回収した分。<br>
+            <b>残高が増え続けるのは、預り金が積み上がっているということです。</b>売上が伸びているのとは違います。
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>決済手段 <span class="note">今月・件数と金額</span></h2>
+        <div class="tw"><table>
+          <thead><tr><th>手段</th><th class="n">件数</th><th class="n">金額</th><th class="n">構成比</th><th>備考</th></tr></thead>
+          <tbody id="pays"></tbody>
+        </table></div>
+      </div>
+
+      <div class="callout warn">
+        <b>超商・ATM は後払いです。</b>入金の通知が来るまで點數を渡さないでください。
+        台湾は超商決済の比率が高く、<b>「申込んだが払わない」件数がそのまま残ります</b>。
+        未入金のまま點數を渡す実装にすると、そこが穴になります。
+      </div>
+
+      <div class="card">
+        <h2>卡包別 <span class="note">今月</span></h2>
+        <div class="tw"><table>
+          <thead><tr>
+            <th>卡包</th><th class="n">抽選回数</th><th class="n">消費點數</th>
+            <th class="sub n">轉換で戻した點數</th><th class="n">差引</th><th class="n">残在庫</th>
+          </tr></thead>
+          <tbody id="byPack"></tbody>
+        </table></div>
+      </div>
+
+      <div class="callout info">
+        <b>現金に換える導線は作らないこと。</b>
+        點數を現金へ戻せる仕組みを持った時点で、<b>幣商（換金業者）と同じ枠に入ります</b>。
+        この画面にも、TWD へ払い戻す数字を置いていません。<b>置かないことが設計です。</b>
       </div>
     </section>
   </main>
@@ -490,14 +621,16 @@
 
   /* ── H3 監査 ─────────────────────────────────
      実測の出現率と公開確率を並べる。乖離が大きければ設定ミスか不具合。 */
-  const AUDIT = {
-    packId: "g_1", draws: 8412,
-    observed: { S: 0.0093, A: 0.0421, B: 0.1462, C: 0.3055, D: 0.4969 }
-  };
+  /* 実測は「回数」で持つ。率だけ持つと在庫の減りと突き合わせられない。
+     g_1 は 200口のうち 157 口が引かれ、残 43（H2 の在庫と一致する）。 */
+  const AUDIT = { packId: "g_1", hits: { S:1, A:5, B:22, C:48, D:81 } };
+  AUDIT.draws = Object.values(AUDIT.hits).reduce((a, b) => a + b, 0);
+  AUDIT.observed = Object.fromEntries(
+    Object.entries(AUDIT.hits).map(([k, v]) => [k, v / AUDIT.draws]));
 
   function renderAudit(){
     const p = PACKS.find(x => x.id === AUDIT.packId);
-    $("#auditScope").textContent = `${p.name}（v${p.version}・直近 ${fmt(AUDIT.draws)} 回）`;
+    $("#auditScope").textContent = `${p.name}（v${p.version}・${fmt(AUDIT.draws)} 回）`;
 
     const maxProb = Math.max(...p.prizes.map(z => z.prob));
     $("#bars").innerHTML = p.prizes.map(z => {
@@ -513,7 +646,8 @@
           <span class="mark" style="left:${Math.min(100, markLeft).toFixed(2)}%"></span>
         </span>
         <span class="nums"><b>${pct(obs)}</b> / ${pct(z.prob)}
-          <span class="dev ${cls}">${dev >= 0 ? "+" : ""}${(dev * 100).toFixed(1)}%</span></span>
+          <span class="dev ${cls}">${dev >= 0 ? "+" : ""}${(dev * 100).toFixed(1)}%</span>
+          <br><span style="font-size:10.5px">${AUDIT.hits[z.rank] ?? 0} 回 / 期待 ${(z.prob * AUDIT.draws).toFixed(1)}</span></span>
       </div>`;
     }).join("");
 
@@ -522,7 +656,7 @@
       return z.prob ? Math.abs((obs - z.prob) / z.prob) : 0;
     }));
     $("#auditKpis").innerHTML = [
-      { l:"監査対象の抽選", v:fmt(AUDIT.draws), s:"直近30日" },
+      { l:"監査対象の抽選", v:fmt(AUDIT.draws), s:`v${p.version} の全期間` },
       { l:"最大の相対乖離", v:(worst * 100).toFixed(1) + "%", s:"公開確率との差", alert: worst >= 0.10 },
       { l:"確率の版", v:"v" + p.version, s:p.published + " 起" },
       { l:"未解決の申立", v:"0", s:"利用者からの照会" }
@@ -761,6 +895,148 @@
       + "　どれが起きたのか分からなくなります。\n\n（原型では未接続）");
   });
 
+  /* ── H5 会員 ─────────────────────────────────
+     個人資料そのものはここに出さない。一覧に要るのは「判断に使う数字と状態」だけ。
+     氏名・住所・連絡先を一覧に並べると、用のない情報まで毎回画面に出ることになる。 */
+  const AGE = { adult:["成人","mute"], minor:["未成年（同意済）","blue"], pending:["未成年（同意待ち）","bad"] };
+  const UST = { active:["利用中","ok"], frozen:["凍結中","warn"], erasing:["削除請求中","bad"] };
+
+  const USERS = [
+    { id:"u_1f41", joined:"2026-07-12", age:"adult",   auth:"LINE",  pt:1240, paid:3500, draws:47, held:12, st:"active" },
+    { id:"u_2a08", joined:"2026-07-20", age:"adult",   auth:"LINE",  pt:0,    paid:1200, draws:15, held:3,  st:"active" },
+    { id:"u_3c77", joined:"2026-07-28", age:"minor",   auth:"LINE",  pt:300,  paid:900,  draws:11, held:24, st:"active" },
+    { id:"u_4b90", joined:"2026-08-02", age:"pending", auth:"email", pt:0,    paid:0,    draws:0,  held:0,  st:"active" },
+    { id:"u_5d12", joined:"2026-08-04", age:"adult",   auth:"LINE",  pt:5600, paid:9000, draws:88, held:8,  st:"active" },
+    { id:"u_6e55", joined:"2026-08-06", age:"adult",   auth:"email", pt:120,  paid:500,  draws:6,  held:1,  st:"frozen" },
+    { id:"u_7f31", joined:"2026-08-08", age:"adult",   auth:"LINE",  pt:800,  paid:2000, draws:22, held:5,  st:"erasing" },
+    { id:"u_8a2c", joined:"2026-08-09", age:"minor",   auth:"LINE",  pt:150,  paid:300,  draws:4,  held:2,  st:"active" },
+    { id:"u_9b47", joined:"2026-08-10", age:"adult",   auth:"LINE",  pt:2400, paid:4000, draws:31, held:9,  st:"active" },
+    { id:"u_a013", joined:"2026-08-11", age:"pending", auth:"LINE",  pt:0,    paid:0,    draws:0,  held:0,  st:"active" }
+  ];
+
+  function renderUsers(){
+    const fs = $("#fSt").value, fa = $("#fAge").value;
+    const rows = USERS.filter(u => (!fs || u.st === fs) && (!fa || u.age === fa));
+    $("#userCount").textContent = `${rows.length} 件 / 直近 ${USERS.length} 件`;
+    $("#users").innerHTML = rows.map(u => {
+      const [al, ac] = AGE[u.age], [sl, sc] = UST[u.st];
+      return `<tr>
+        <td class="mono">${u.id}</td>
+        <td class="mono">${u.joined.slice(5)}</td>
+        <td><span class="pill ${ac}">${al}</span></td>
+        <td>${u.auth}</td>
+        <td class="n">${fmt(u.pt)} PT</td>
+        <td class="n">${fmt(u.paid)} TWD</td>
+        <td class="sub">${u.draws}</td>
+        <td class="sub">${u.held}</td>
+        <td><span class="pill ${sc}">${sl}</span></td>
+        <td><button class="btn ghost" style="padding:5px 10px; font-size:12px"
+                    data-u="${u.id}">詳細</button></td>
+      </tr>`;
+    }).join("");
+
+    const pending = USERS.filter(u => u.age === "pending").length;
+    const erasing = USERS.filter(u => u.st === "erasing").length;
+    const frozen  = USERS.filter(u => u.st === "frozen").length;
+    $("#userKpis").innerHTML = [
+      { l:"会員", v:fmt(512), s:"今月の新規 87" },
+      { l:"未成年（同意待ち）", v:pending, s:"課金させないこと", alert:pending > 0 },
+      { l:"個資の削除請求", v:erasing, s:"抽選ログは消さない", alert:erasing > 0 },
+      { l:"凍結中", v:frozen, s:"不正の疑い・本人申告" }
+    ].map(k => `<div class="kpi${k.alert ? " alert" : ""}">
+        <div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${k.s}</div></div>`).join("");
+  }
+
+  $("#fSt").addEventListener("change", renderUsers);
+  $("#fAge").addEventListener("change", renderUsers);
+  $("#users").addEventListener("click", e => {
+    const b = e.target.closest("[data-u]"); if (!b) return;
+    alert(`${b.dataset.u} の詳細を開きます。\n\n`
+      + `・氏名／住所／連絡先の閲覧は access_log に残ります\n`
+      + `・點數の付与・減算は理由の入力を必須にします\n`
+      + `・削除請求に応じるときは、個人情報だけを消し\n`
+      + `　抽選ログには ${b.dataset.u} を残します\n\n（原型では未接続）`);
+  });
+  $("#btnUserExport").addEventListener("click", () => {
+    alert("CSVで書き出します。\n\n"
+      + "※ 個人資料を含む書き出しは、誰がいつ何件出したかを記録します。\n"
+      + "　書き出したファイルの管理まで含めて個資法の対象です。\n\n（原型では未接続）");
+  });
+
+  /* ── H6 売上・分析 ───────────────────────────
+     課金は TWD、消費は PT。**別の数字なので足さない。**
+     買われた點數はまだ売上ではなく預り金で、抽選に使われて初めて売上になる。 */
+  const RATE = { B:150, C:50, D:20 };                  // 轉換レート（等級別・PT）
+
+  /* 卡包別は在庫の減りから出す。数字を別に持つと H2 とずれる */
+  const byPack = PACKS.map(p => {
+    const drawn = p.total - p.stock;                    // 引かれた口数
+    const spent = drawn * p.price;                      // 消費された點數
+    const back  = p.prizes.reduce((a, z) =>
+      a + (RATE[z.rank] ?? 0) * inv(p.id, z.rank).conv, 0);   // 轉換で戻した點數
+    return { p, drawn, spent, back };
+  });
+
+  const PT = {
+    issued: 260000,                                     // 課金で発行した點數
+    back:   byPack.reduce((a, x) => a + x.back, 0),
+    spent:  byPack.reduce((a, x) => a + x.spent, 0)
+  };
+  PT.balance = PT.issued + PT.back - PT.spent;          // 未消費＝預り金
+
+  const PAYS = [
+    { m:"信用卡",    n:236, amt:118000, memo:"チャージバックの窓口が要る" },
+    { m:"超商代碼",  n:182, amt:91000,  memo:"後払い。入金通知まで點數を渡さない", pend:23 },
+    { m:"ATM 轉帳",  n:52,  amt:26000,  memo:"後払い。同上", pend:7 },
+    { m:"LINE Pay",  n:50,  amt:25000,  memo:"台湾の主要手段" }
+  ];
+
+  function renderSales(){
+    const paid = PAYS.reduce((a, x) => a + x.amt, 0);
+    const cnt  = PAYS.reduce((a, x) => a + x.n, 0);
+    const pend = PAYS.reduce((a, x) => a + (x.pend || 0), 0);
+
+    $("#salesKpis").innerHTML = [
+      { l:"今月の課金", v:fmt(paid) + " TWD", s:`${fmt(cnt)} 件` },
+      { l:"未消費の點數", v:fmt(PT.balance) + " PT", s:"預り金。売上ではない" },
+      { l:"課金した会員", v:"174", s:"会員 512 のうち 34%" },
+      { l:"未入金の申込", v:pend, s:"超商・ATM。點數は未付与", alert:pend > 0 }
+    ].map(k => `<div class="kpi${k.alert ? " alert" : ""}">
+        <div class="l">${k.l}</div><div class="v">${k.v}</div><div class="s">${k.s}</div></div>`).join("");
+
+    const flow = [
+      { l:"発行", v:PT.issued, note:"課金で渡した" },
+      { l:"轉換", v:PT.back,   note:"ハズレを戻した（持ち出し）" },
+      { l:"消費", v:PT.spent,  note:"抽選で回収した" },
+      { l:"残高", v:PT.balance, note:"未消費＝預り金" }
+    ];
+    const mx = Math.max(...flow.map(f => f.v));
+    $("#ptFlow").innerHTML = flow.map(f => `<div class="bar">
+      <span class="lb">${f.l}</span>
+      <span class="track"><span class="fill" style="width:${(f.v / mx * 100).toFixed(2)}%"></span></span>
+      <span class="nums"><b>${fmt(f.v)}</b> PT<br><span style="font-size:10.5px">${f.note}</span></span>
+    </div>`).join("");
+
+    $("#pays").innerHTML = PAYS.map(x => `<tr>
+      <td><b>${x.m}</b></td>
+      <td class="n">${fmt(x.n)}${x.pend ? ` <span class="pill warn">未入金 ${x.pend}</span>` : ""}</td>
+      <td class="n">${fmt(x.amt)} TWD</td>
+      <td class="n">${(x.amt / paid * 100).toFixed(1)}%</td>
+      <td class="mono">${esc(x.memo)}</td>
+    </tr>`).join("");
+
+    $("#byPack").innerHTML = byPack.map(x => `<tr>
+      <td><b>${esc(x.p.name)}</b></td>
+      <td class="n">${fmt(x.drawn)}</td>
+      <td class="n">${fmt(x.spent)} PT</td>
+      <td class="sub">${fmt(x.back)} PT</td>
+      <td class="n"><b>${fmt(x.spent - x.back)} PT</b></td>
+      <td class="n">${fmt(x.p.stock)} / ${fmt(x.p.total)}</td>
+    </tr>`).join("");
+  }
+
+  $("#btnSalesExport").addEventListener("click", () => alert("CSV書き出し（原型では未接続）"));
+
   /* ── ナビ ───────────────────────────────── */
   $("#nav").addEventListener("click", e => {
     const a = e.target.closest("a"); if (!a) return;
@@ -773,7 +1049,7 @@
   });
 
   renderPackList(); renderOdds(); renderStock(); renderMoves();
-  renderAudit(); renderLogs(); renderShips();
+  renderAudit(); renderLogs(); renderShips(); renderUsers(); renderSales();
 
   // ?v=audit / ?v=ship で直接開く（共有と確認用）
   const v0 = new URLSearchParams(location.search).get("v");
