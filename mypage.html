@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>會員中心 — DOPA 台灣</title>
 </head><body>
 <style>
@@ -215,9 +215,9 @@
   ].map(row).join("");
 
   $("#mLogs").innerHTML = [
-    { icon:"🪙", title:"點數紀錄", desc:"每一筆增減都可查看", act:"ledger" },
-    { icon:"🎯", title:"抽卡紀錄", desc:"抽卡結果與當時的機率版本", act:"draws" },
-    { icon:"🧾", title:"購買紀錄", desc:"付款方式與發票", act:"payments" }
+    { icon:"🪙", title:"點數紀錄", desc:"每一筆增減都可查看", href:"./logs.html?v=ledger" },
+    { icon:"🎯", title:"抽卡紀錄", desc:"抽卡結果與當時的機率版本", href:"./logs.html?v=draws" },
+    { icon:"🧾", title:"購買紀錄", desc:"付款方式與發票", href:"./logs.html?v=payments" }
   ].map(row).join("");
 
   $("#mAcc").innerHTML = [

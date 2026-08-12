@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>紀錄 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* 紀錄3種（點數・抽卡・購買）。mypage の「紀錄」から来る。
+     1ファイルにまとめたのは、利用者がこの3つを行き来するため。
+     ?v=ledger | draws | payments で直接開ける。
+
+     ここは「運営が勝手に数字を動かしていないこと」を利用者が自分で確かめる場所。
+     - 點數：增減の一件ずつと、そのあとの残高
+     - 抽卡：**引いた時点の機率版本**。転蛋法で開示した確率が後から辿れること
+     - 購買：**同意した告知の版**。解除権の説明に同意した記録
+
+     配色・寸法は mypage.html に合わせている（同じ利用者が続けて見るため）。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --coin:#F5B920; --green:#1E7A4D; --amber:#A85D00; --blue:#1B5FD0;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(40px + var(--safe))}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  a{text-decoration:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 6px 0 4px;
+      display:flex; align-items:center; gap:2px; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .bk{width:44px; height:44px; display:grid; place-items:center; flex:0 0 auto}
+  .hd .ttl{font-size:15px; font-weight:800}
+
+  /* タブ */
+  .segs{position:sticky; top:52px; z-index:49; background:#fff; display:grid;
+        grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line)}
+  .segs button{padding:11px 4px 9px; font-size:13px; font-weight:800; color:var(--sub);
+               border-bottom:3px solid transparent}
+  .segs button.on{color:var(--red); border-bottom-color:var(--red)}
+
+  .view{display:none}
+  .view.on{display:block}
+
+  /* 残高の帯 */
+  .bal{margin:12px; padding:14px 16px; border-radius:14px; color:#fff;
+       background:linear-gradient(135deg,#C4103A,#EC1E4E 55%,#FF6B2C);
+       box-shadow:0 4px 16px rgba(160,20,50,.32)}
+  .bal .l{font-size:11px; font-weight:700; opacity:.9}
+  .bal .v{margin-top:3px; display:flex; align-items:baseline; gap:6px}
+  .bal .v b{font-size:32px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums}
+  .bal .v span{font-size:13px; font-weight:800; opacity:.9}
+  .bal .s{margin-top:7px; font-size:10.5px; opacity:.88; line-height:1.6}
+
+  .sec{background:#fff; margin:12px; border-radius:12px; overflow:hidden;
+       box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .sec h2{margin:0; padding:12px 14px 10px; font-size:12px; font-weight:800; color:var(--sub);
+          letter-spacing:.05em; border-bottom:1px solid var(--line);
+          display:flex; align-items:center; gap:8px}
+  .sec h2 .r{margin-left:auto; font-weight:700; font-size:10.5px}
+
+  /* 一覧の行 */
+  .row{display:flex; gap:11px; padding:13px 14px; border-bottom:1px solid var(--line);
+       align-items:flex-start}
+  .row:last-child{border-bottom:none}
+  .row .ic{width:32px; height:32px; flex:0 0 auto; border-radius:8px; background:#FBF6EA;
+           display:grid; place-items:center; font-size:15px}
+  .row .tx{flex:1; min-width:0}
+  .row .tx b{display:block; font-size:13.5px; font-weight:700}
+  .row .tx small{display:block; font-size:10.5px; color:var(--sub); margin-top:3px; line-height:1.6}
+  .row .rt{flex:0 0 auto; text-align:right}
+  .row .amt{font-size:15px; font-weight:900; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .row .amt.plus{color:var(--green)}
+  .row .amt.minus{color:var(--ink)}
+  .row .after{margin-top:3px; font-size:10.5px; color:var(--sub);
+              font-variant-numeric:tabular-nums; white-space:nowrap}
+  .dt{font-family:var(--mono); font-size:10.5px; color:var(--sub)}
+
+  .pill{display:inline-block; font-size:10px; font-weight:800; border-radius:999px;
+        padding:2px 8px; white-space:nowrap}
+  .pill.ok{background:#E7F5EC; color:var(--green)}
+  .pill.warn{background:#FFF3E0; color:var(--amber)}
+  .pill.mute{background:#F2EFE9; color:var(--sub)}
+  .pill.blue{background:#EAF1FC; color:var(--blue)}
+
+  /* 機率版本のバッジ。押すと当時の確率表へ */
+  .ver{display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:800;
+       color:var(--blue); background:#EAF1FC; border-radius:999px; padding:3px 9px;
+       margin-top:5px; border:1px solid #D3E1F7}
+  .ver svg{width:11px; height:11px}
+
+  /* 抽卡の結果内訳 */
+  .rk{display:inline-flex; align-items:center; justify-content:center; min-width:20px;
+      font:800 10px/1 var(--mono); color:#fff; border-radius:4px; padding:3px 5px; margin-right:3px}
+  .rk.S{background:#B8860B} .rk.A{background:#6D1FB0} .rk.B{background:#1B5FD0}
+  .rk.C{background:#1E7A4D} .rk.D{background:#8A8178}
+  .rk .x{margin-left:3px; opacity:.85}
+
+  /* 注意書き */
+  .note{margin:12px; padding:13px 14px; border-radius:12px; font-size:11.5px; line-height:1.85;
+        background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.95); color:#5A4113}
+  .note b{color:#3C2A0C}
+  .note.strong{background:#FFF6E0; border-color:#F3DFAE}
+
+  .empty{padding:34px 14px; text-align:center; font-size:12.5px; color:var(--sub)}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <a class="bk" href="./mypage.html" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span class="ttl" id="ttl">紀錄</span>
+  </header>
+
+  <div class="segs">
+    <button data-v="ledger" class="on">點數</button>
+    <button data-v="draws">抽卡</button>
+    <button data-v="payments">購買</button>
+  </div>
+
+  <!-- 點數紀錄 -->
+  <section class="view on" id="v-ledger">
+    <div class="bal">
+      <div class="l">目前點數</div>
+      <div class="v"><b id="balNow">0</b><span>PT</span></div>
+      <div class="s" id="balNote">—</div>
+    </div>
+
+    <section class="sec">
+      <h2>每一筆增減 <span class="r" id="ledCount">—</span></h2>
+      <div id="ledger"></div>
+    </section>
+
+    <p class="note">
+      <b>點數僅能用於本服務內。</b>不提供任何形式的現金兌換，也無法轉讓給其他會員。<br>
+      若您發現任何一筆增減與您的操作不符，請保留此頁面的截圖並聯繫客服。
+      <b>每一筆都有紀錄，包含客服所做的調整。</b>
+    </p>
+  </section>
+
+  <!-- 抽卡紀錄 -->
+  <section class="view" id="v-draws">
+    <section class="sec">
+      <h2>抽卡結果 <span class="r" id="drawCount">—</span></h2>
+      <div id="draws"></div>
+    </section>
+
+    <p class="note strong">
+      <b>每一次抽卡都會記錄「當時的機率版本」。</b>
+      卡包的機率調整後會建立新的版本，<b>已經抽過的紀錄仍然對應調整前的版本</b>。
+      點選版本標籤，可以看到您抽卡當下所公開的完整機率表。
+    </p>
+
+    <p class="note">
+      抽卡結果由伺服器決定並記錄，<b>演出只是播放已經決定好的結果</b>。
+      因此無論網路狀況或裝置差異，結果都不會改變。
+    </p>
+  </section>
+
+  <!-- 購買紀錄 -->
+  <section class="view" id="v-payments">
+    <section class="sec">
+      <h2>購買點數 <span class="r" id="payCount">—</span></h2>
+      <div id="payments"></div>
+    </section>
+
+    <p class="note strong">
+      <b>超商代碼・ATM 轉帳為後付款。</b>
+      在我們收到入帳通知之前，點數不會發放，狀態會顯示為「等待付款」。
+      <b>已經付款但狀態未更新時，請不要重複付款</b>，直接聯繫客服。
+    </p>
+
+    <p class="note">
+      <b>購買點數屬於數位內容，依消費者保護法不適用七天解除權</b>，
+      您在購買時已就此同意。同意的條款版本記錄於每一筆紀錄中。<br>
+      <b>實體卡片的寄送則不同</b>：收到商品後七天內可以解除，起算日為您收到商品的當天。
+    </p>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+  const fmt = n => n.toLocaleString("zh-Hant");
+
+  /* ── 點數紀錄 ─────────────────────────────────
+     期首残高からの増減。**残高は表示のために積み上げるだけで、保持しない。**
+     `point_ledger` の増減を合計したものが残高、という設計をそのまま画面にしている。 */
+  const OPENING = 400;                       // 30日前の残高
+
+  const KIND = {
+    buy:     { ic:"💳", label:"購買點數",   cls:"plus"  },
+    draw:    { ic:"🎯", label:"抽卡",       cls:"minus" },
+    convert: { ic:"🪙", label:"點數轉換",   cls:"plus"  },
+    ship:    { ic:"📦", label:"寄送手續費", cls:"minus" },
+    adjust:  { ic:"🛟", label:"客服調整",   cls:"plus"  }
+  };
+
+  /* 古い順。表示は新しい順にする */
+  const LEDGER = [
+    { at:"07-13 14:22", k:"buy",     d:6000, memo:"信用卡 NT$6,000" },
+    { at:"07-14 21:05", k:"draw",    d:-500, memo:"噴火龍 ex 決戰包 ×1" },
+    { at:"07-15 09:41", k:"convert", d:40,   memo:"一般卡 隨機 ×2" },
+    { at:"07-25 20:18", k:"draw",    d:-5000,memo:"噴火龍 ex 決戰包 ×10" },
+    { at:"07-26 08:03", k:"convert", d:520,  memo:"皮卡丘 V ×2・稀有卡 ×4・一般卡 ×1" },
+    { at:"08-02 19:30", k:"draw",    d:-1000,memo:"25 週年紀念收藏 ×1" },
+    { at:"08-05 12:10", k:"buy",     d:3000, memo:"超商代碼 NT$3,000" },
+    { at:"08-06 22:47", k:"draw",    d:-3000,memo:"海賊王 世界最強戰士 ×10" },
+    { at:"08-07 10:26", k:"convert", d:340,  memo:"索隆 R ×1・稀有卡 ×3・一般卡 ×2" },
+    { at:"08-08 18:02", k:"buy",     d:2000, memo:"LINE Pay NT$2,000" },
+    { at:"08-08 18:15", k:"draw",    d:-500, memo:"噴火龍 ex 決戰包 ×1" },
+    { at:"08-09 11:38", k:"convert", d:150,  memo:"皮卡丘 V ×1" },
+    { at:"08-10 15:52", k:"ship",    d:-60,  memo:"寄送申請 12 張" },
+    { at:"08-10 16:30", k:"adjust",  d:100,  memo:"寄送延遲的補償（客服 #2214）" },
+    { at:"08-11 20:41", k:"draw",    d:-1000,memo:"25 週年紀念收藏 ×1" },
+    { at:"08-11 20:55", k:"draw",    d:-500, memo:"噴火龍 ex 決戰包 ×1" },
+    { at:"08-11 21:12", k:"convert", d:210,  memo:"稀有卡 隨機 ×3・一般卡 隨機 ×3" }
+  ];
+
+  /* 残高を積み上げる。ここで各行の「あと残高」が決まる */
+  let run = OPENING;
+  LEDGER.forEach(r => { run += r.d; r.after = run; });
+  const BALANCE = run;
+
+  function renderLedger(){
+    $("#balNow").textContent = fmt(BALANCE);
+    $("#balNote").textContent =
+      `顯示最近 30 天。期初 ${fmt(OPENING)} PT ・ 期間內 ${LEDGER.length} 筆`;
+    $("#ledCount").textContent = `${LEDGER.length} 筆`;
+
+    $("#ledger").innerHTML = [...LEDGER].reverse().map(r => {
+      const k = KIND[r.k];
+      return `<div class="row">
+        <span class="ic">${k.ic}</span>
+        <span class="tx">
+          <b>${k.label}</b>
+          <small>${esc(r.memo)}<br><span class="dt">${r.at}</span></small>
+        </span>
+        <span class="rt">
+          <span class="amt ${k.cls}">${r.d > 0 ? "+" : ""}${fmt(r.d)}</span>
+          <span class="after">餘額 ${fmt(r.after)}</span>
+        </span>
+      </div>`;
+    }).join("");
+  }
+
+  /* ── 抽卡紀錄 ─────────────────────────────────
+     **機率版本を必ず出す。**卡包の確率を変えると新しい版が作られるので、
+     過去の抽卡は当時の版に結びついたまま残る。ここがその見える場所。 */
+  const DRAWS = [
+    { at:"08-11 20:55", pack:"噴火龍 ex 決戰包", ver:3, cost:500,  n:1,
+      res:{ C:1 } },
+    { at:"08-11 20:41", pack:"25 週年紀念收藏",  ver:2, cost:1000, n:1,
+      res:{ B:1 } },
+    { at:"08-08 18:15", pack:"噴火龍 ex 決戰包", ver:3, cost:500,  n:1,
+      res:{ B:1 } },
+    { at:"08-06 22:47", pack:"海賊王 世界最強戰士", ver:1, cost:3000, n:10,
+      res:{ B:1, C:3, D:6 } },
+    { at:"08-02 19:30", pack:"25 週年紀念收藏",  ver:1, cost:1000, n:1,
+      res:{ D:1 } },
+    { at:"07-25 20:18", pack:"噴火龍 ex 決戰包", ver:2, cost:5000, n:10,
+      res:{ A:1, B:2, C:4, D:3 }, best:"A" },
+    { at:"07-14 21:05", pack:"噴火龍 ex 決戰包", ver:2, cost:500,  n:1,
+      res:{ D:1 } }
+  ];
+
+  const ORDER = ["S","A","B","C","D"];
+  const LINK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>`;
+
+  function renderDraws(){
+    $("#drawCount").textContent = `${DRAWS.length} 筆`;
+    $("#draws").innerHTML = DRAWS.map(d => {
+      const chips = ORDER.filter(r => d.res[r]).map(r =>
+        `<span class="rk ${r}">${r}${d.res[r] > 1 ? `<span class="x">×${d.res[r]}</span>` : ""}</span>`).join("");
+      return `<div class="row">
+        <span class="ic">🎯</span>
+        <span class="tx">
+          <b>${esc(d.pack)}<span style="font-weight:700; color:var(--sub)"> ×${d.n}</span></b>
+          <small>
+            <span style="display:inline-block; margin:4px 0 2px">${chips}</span><br>
+            <span class="dt">${d.at}</span>
+          </small>
+          <a class="ver" href="./odds.html?pack=${encodeURIComponent(d.pack)}&v=${d.ver}">
+            抽卡當時的機率 v${d.ver} ${LINK}</a>
+        </span>
+        <span class="rt">
+          <span class="amt minus">-${fmt(d.cost)}</span>
+          <span class="after">PT</span>
+        </span>
+      </div>`;
+    }).join("");
+  }
+
+  /* ── 購買紀錄 ─────────────────────────────────
+     **同意した告知の版を残す。**「解除権の対象外である」と示して同意を得た文面が
+     どの版だったかが、後から争いになったときの根拠になる。
+     未入金は點數が付いていないことが見て分かる形にする。 */
+  const PAYS = [
+    { at:"08-11 09:14", twd:1000, pt:1000, method:"ATM 轉帳",   st:"pending",  inv:null,
+      terms:"terms-v1.1", memo:"轉帳末五碼未收到" },
+    { at:"08-08 18:02", twd:2000, pt:2000, method:"LINE Pay",   st:"paid", inv:"AB-12345702", terms:"terms-v1.0" },
+    { at:"08-05 12:10", twd:3000, pt:3000, method:"超商代碼",   st:"paid", inv:"AB-12345690", terms:"terms-v1.0" },
+    { at:"07-13 14:22", twd:6000, pt:6000, method:"信用卡",     st:"paid", inv:"AB-12345678", terms:"terms-v1.0" }
+  ];
+  const PST = { paid:["已完成","ok"], pending:["等待付款","warn"], failed:["未完成","mute"] };
+
+  function renderPays(){
+    $("#payCount").textContent = `${PAYS.length} 筆`;
+    $("#payments").innerHTML = PAYS.map(p => {
+      const [label, cls] = PST[p.st];
+      return `<div class="row">
+        <span class="ic">${p.st === "paid" ? "🧾" : "⏳"}</span>
+        <span class="tx">
+          <b>NT$${fmt(p.twd)} <span class="pill ${cls}">${label}</span></b>
+          <small>
+            ${esc(p.method)}${p.memo ? ` ・ ${esc(p.memo)}` : ""}<br>
+            ${p.inv ? `發票 ${p.inv} ・ ` : `<b style="color:var(--amber)">尚未發放點數</b> ・ `}
+            <span title="購買時同意的條款版本">${p.terms}</span><br>
+            <span class="dt">${p.at}</span>
+          </small>
+        </span>
+        <span class="rt">
+          <span class="amt ${p.st === "paid" ? "plus" : ""}"
+                style="${p.st === "paid" ? "" : "color:var(--sub)"}">${p.st === "paid" ? "+" : ""}${fmt(p.pt)}</span>
+          <span class="after">PT</span>
+        </span>
+      </div>`;
+    }).join("");
+  }
+
+  /* ── タブ ───────────────────────────────── */
+  const TITLE = { ledger:"點數紀錄", draws:"抽卡紀錄", payments:"購買紀錄" };
+  function show(v){
+    document.querySelectorAll(".segs button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+    document.querySelectorAll(".view").forEach(s => s.classList.remove("on"));
+    $("#v-" + v).classList.add("on");
+    $("#ttl").textContent = TITLE[v] || "紀錄";
+    scrollTo({ top:0 });
+  }
+  document.querySelector(".segs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (b) show(b.dataset.v);
+  });
+
+  renderLedger(); renderDraws(); renderPays();
+
+  const v0 = new URLSearchParams(location.search).get("v");
+  show(TITLE[v0] ? v0 : "ledger");
+})();
+</script>
+</body></html>
