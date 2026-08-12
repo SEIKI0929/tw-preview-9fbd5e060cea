@@ -221,9 +221,9 @@
   ].map(row).join("");
 
   $("#mAcc").innerHTML = [
-    { icon:"👤", title:"個人資料", act:"profile" },
-    { icon:"📍", title:"收件地址", desc:"寄送時使用", act:"address" },
-    { icon:"🔔", title:"通知設定", act:"notify" },
+    { icon:"👤", title:"個人資料", desc:"年齡確認・個資的權利", href:"./account.html?v=profile" },
+    { icon:"📍", title:"收件地址", desc:"寄送時使用", href:"./account.html?v=address" },
+    { icon:"🔔", title:"通知設定", href:"./account.html?v=notify" },
     { icon:"📄", title:"服務條款・隱私權政策", act:"terms" },
     { icon:"🚪", title:"登出", act:"logout", danger:true }
   ].map(row).join("");

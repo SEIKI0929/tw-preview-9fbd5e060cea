@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>帳戶設定 — DOPA 台灣</title>
+</head><body>
+<style>
+  /* A3 個人資料 ＋ E2 收件地址の管理 ＋ G4 通知設定。
+     mypage の「帳戶」から来る。?v=profile | address | notify
+
+     個資法（個人資料保護法）が正面から効く画面。
+     - 當事人の権利（查詢・閱覽・複製・補充更正・停止利用・刪除）は**契約で放棄させられない**
+     - **削除請求に応じても抽卡紀錄は消さない。**転蛋法の証明が消えるため。
+       個人情報だけを消し、仮名の識別子（u_8f2a41）を残す設計をここでも説明する
+     - **行銷通知は既定でオフ。**同意を取ってから送る
+
+     連絡先は既定で伏せる。用があるときだけ表示させる。
+     一覧に平文で置くと、画面を見られただけで漏れる。
+
+     配色・寸法は mypage.html / logs.html に合わせている。 */
+  :root{
+    --bg1:#FFD233; --bg2:#FF9A1F;
+    --red:#EC1E4E; --red-dark:#C4103A;
+    --ink:#221A12; --sub:#8A8178; --line:#E6E1DA;
+    --green:#1E7A4D; --amber:#A85D00; --blue:#1B5FD0;
+    --safe: env(safe-area-inset-bottom, 0px);
+    --tc:"PingFang TC","Noto Sans TC","Microsoft JhengHei","Hiragino Sans",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0}
+  body{font-family:var(--tc); color:var(--ink);
+       background:linear-gradient(180deg,var(--bg1) 0%,var(--bg2) 40%,var(--bg2) 100%);
+       background-attachment:fixed; -webkit-font-smoothing:antialiased}
+  #app{max-width:480px; margin:0 auto; padding-bottom:calc(40px + var(--safe))}
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  a{text-decoration:none; color:inherit}
+  :focus-visible{outline:3px solid #1B7FE0; outline-offset:2px}
+
+  .hd{position:sticky; top:0; z-index:50; background:#fff; height:52px; padding:0 6px 0 4px;
+      display:flex; align-items:center; gap:2px; box-shadow:0 1px 0 rgba(0,0,0,.08)}
+  .hd .bk{width:44px; height:44px; display:grid; place-items:center; flex:0 0 auto}
+  .hd .ttl{font-size:15px; font-weight:800}
+
+  .segs{position:sticky; top:52px; z-index:49; background:#fff; display:grid;
+        grid-template-columns:repeat(3,1fr); border-bottom:1px solid var(--line)}
+  .segs button{padding:11px 4px 9px; font-size:13px; font-weight:800; color:var(--sub);
+               border-bottom:3px solid transparent}
+  .segs button.on{color:var(--red); border-bottom-color:var(--red)}
+
+  .view{display:none}
+  .view.on{display:block}
+
+  .sec{background:#fff; margin:12px; border-radius:12px; overflow:hidden;
+       box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .sec > h2{margin:0; padding:12px 14px 10px; font-size:12px; font-weight:800; color:var(--sub);
+            letter-spacing:.05em; border-bottom:1px solid var(--line);
+            display:flex; align-items:center; gap:8px}
+  .sec > h2 .r{margin-left:auto; font-weight:700; font-size:10.5px}
+
+  /* 項目 */
+  .fld{display:flex; align-items:center; gap:11px; padding:13px 14px;
+       border-bottom:1px solid var(--line)}
+  .fld:last-child{border-bottom:none}
+  .fld .l{font-size:12.5px; font-weight:700; color:var(--sub); flex:0 0 96px}
+  .fld .v{flex:1; min-width:0; font-size:13.5px; font-weight:700; word-break:break-all}
+  .fld .v small{display:block; font-size:10.5px; font-weight:600; color:var(--sub); margin-top:3px;
+                line-height:1.6}
+  .fld .go{flex:0 0 auto; font-size:11.5px; font-weight:800; color:var(--blue);
+           background:#EAF1FC; border-radius:7px; padding:6px 11px}
+  .fld .mono{font-family:var(--mono)}
+
+  .pill{display:inline-block; font-size:10px; font-weight:800; border-radius:999px;
+        padding:3px 9px; white-space:nowrap}
+  .pill.ok{background:#E7F5EC; color:var(--green)}
+  .pill.warn{background:#FFF3E0; color:var(--amber)}
+  .pill.mute{background:#F2EFE9; color:var(--sub)}
+  .pill.blue{background:#EAF1FC; color:var(--blue)}
+
+  /* 住所 */
+  .ad{padding:14px; border-bottom:1px solid var(--line)}
+  .ad:last-child{border-bottom:none}
+  .ad .t{display:flex; align-items:center; gap:8px; margin-bottom:6px}
+  .ad .t b{font-size:13.5px; font-weight:800}
+  .ad .t .edit{margin-left:auto; font-size:11.5px; font-weight:800; color:var(--blue)}
+  .ad .body{font-size:12.5px; line-height:1.75}
+  .ad .who{margin-top:5px; font-size:11.5px; color:var(--sub)}
+  .ad .set{margin-top:9px; font-size:11.5px; font-weight:800; color:var(--red)}
+
+  .add{width:calc(100% - 28px); margin:12px 14px 14px; padding:12px; border-radius:9px;
+       border:1.5px dashed #D8D1C7; color:var(--sub); font-size:13px; font-weight:800}
+
+  /* トグル */
+  .tg{display:flex; align-items:center; gap:11px; padding:13px 14px;
+      border-bottom:1px solid var(--line)}
+  .tg:last-child{border-bottom:none}
+  .tg .tx{flex:1; min-width:0}
+  .tg .tx b{display:block; font-size:13.5px; font-weight:700}
+  .tg .tx small{display:block; font-size:10.5px; color:var(--sub); margin-top:3px; line-height:1.6}
+  .sw{flex:0 0 auto; width:46px; height:27px; border-radius:999px; background:#DCD6CC;
+      position:relative; transition:background .18s}
+  .sw::after{content:""; position:absolute; top:3px; left:3px; width:21px; height:21px;
+             border-radius:50%; background:#fff; transition:transform .18s;
+             box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .sw.on{background:var(--green)}
+  .sw.on::after{transform:translateX(19px)}
+
+  .note{margin:12px; padding:13px 14px; border-radius:12px; font-size:11.5px; line-height:1.85;
+        background:rgba(255,255,255,.82); border:1px solid rgba(255,255,255,.95); color:#5A4113}
+  .note b{color:#3C2A0C}
+  .note.strong{background:#FFF6E0; border-color:#F3DFAE}
+
+  .danger{margin:12px; padding:14px; border-radius:12px; background:#fff;
+          box-shadow:0 2px 8px rgba(120,60,0,.16)}
+  .danger h3{margin:0 0 8px; font-size:12.5px; font-weight:800; color:var(--red)}
+  .danger p{margin:0 0 10px; font-size:11.5px; line-height:1.8; color:var(--sub)}
+  .danger button{width:100%; padding:11px; border-radius:9px; border:1.5px solid var(--red);
+                 color:var(--red); font-size:13px; font-weight:800}
+
+  #toast{position:fixed; left:50%; bottom:calc(28px + var(--safe));
+         transform:translateX(-50%) translateY(8px);
+         background:rgba(20,14,8,.92); color:#fff; font-size:13px; font-weight:700;
+         padding:10px 18px; border-radius:999px; z-index:100; max-width:88%; text-align:center;
+         opacity:0; pointer-events:none; transition:opacity .22s, transform .22s}
+  #toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+
+<div id="app">
+  <header class="hd">
+    <a class="bk" href="./mypage.html" aria-label="返回">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span class="ttl" id="ttl">帳戶設定</span>
+  </header>
+
+  <div class="segs">
+    <button data-v="profile" class="on">個人資料</button>
+    <button data-v="address">收件地址</button>
+    <button data-v="notify">通知</button>
+  </div>
+
+  <!-- 個人資料 -->
+  <section class="view on" id="v-profile">
+    <section class="sec">
+      <h2>基本資料</h2>
+      <div id="basic"></div>
+    </section>
+
+    <section class="sec">
+      <h2>登入與驗證</h2>
+      <div id="auth"></div>
+    </section>
+
+    <p class="note strong">
+      <b>電子郵件與手機號碼預設不顯示。</b>需要時再按「顯示」。
+      畫面被他人看到時，聯絡方式不會一併外洩。
+    </p>
+
+    <section class="sec">
+      <h2>您對個人資料的權利</h2>
+      <div id="rights"></div>
+    </section>
+
+    <p class="note">
+      依<b>個人資料保護法</b>，您可以查詢、閱覽、複製、補充或更正您的個人資料，
+      也可以要求停止蒐集處理利用或刪除。<b>這些權利不會因為使用條款而受到限制。</b>
+    </p>
+
+    <p class="note strong">
+      <b>要求刪除個人資料時，抽卡紀錄本身不會被刪除。</b>
+      中獎機率的揭露依法必須能夠被查證，紀錄消失就無法證明「依照公開的機率抽卡」。<br>
+      我們會<b>刪除姓名・地址・聯絡方式，只保留 <span class="mono">u_8f2a41</span> 這樣的代號</b>，
+      使紀錄無法連結到您本人。
+    </p>
+
+    <div class="danger">
+      <h3>刪除帳號</h3>
+      <p>
+        刪除後無法復原。<b>尚未使用的點數、持有中的卡片、寄送中的商品</b>會如何處理，
+        請先與客服確認。
+      </p>
+      <button data-act="delete">與客服聯繫</button>
+    </div>
+  </section>
+
+  <!-- 收件地址 -->
+  <section class="view" id="v-address">
+    <section class="sec">
+      <h2>已登錄的地址 <span class="r" id="nAd">—</span></h2>
+      <div id="addrs"></div>
+      <button class="add" data-act="addr-new">＋ 新增收件地址</button>
+    </section>
+
+    <p class="note strong">
+      <b>申請寄送時，會將當下的地址複製一份保存。</b>
+      之後即使您修改或刪除這裡的地址，<b>已經申請的寄送不會改變送達地點</b>。
+      需要變更時請直接聯繫客服。
+    </p>
+
+    <p class="note">
+      超商取貨需要指定門市。<b>部分卡片因尺寸或保護殼的關係無法超商取貨</b>，
+      申請時會另行提示。
+    </p>
+  </section>
+
+  <!-- 通知 -->
+  <section class="view" id="v-notify">
+    <section class="sec">
+      <h2>服務通知</h2>
+      <div id="nSvc"></div>
+    </section>
+
+    <section class="sec">
+      <h2>行銷資訊</h2>
+      <div id="nMkt"></div>
+    </section>
+
+    <p class="note strong">
+      <b>即使關閉所有通知，重要事項仍會以電子郵件寄送。</b>
+      包含寄送狀態與<b>七日解除權的期限</b>。
+      這些會影響您的權利，因此不會因為設定而不通知。
+    </p>
+
+    <p class="note">
+      行銷資訊<b>預設為關閉</b>，開啟後才會寄送。隨時可以再關閉。
+      關閉行銷資訊不會影響服務通知。
+    </p>
+  </section>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
+
+  /* 連絡先は伏せた形で持ち、押されたときだけ実値を出す。
+     実装ではサーバーから伏せ字を返し、実値は別のリクエストで取る */
+  const ME = {
+    nick:"王小明", id:"u_8f2a41", joined:"2026-07-12", level:"白銀會員",
+    age:"adult",                                   // adult | minor | pending
+    email:{ mask:"w••••@gmail.com", real:"wang.ming@gmail.com" },
+    phone:{ mask:"09••-•••-123",     real:"0912-345-123" },
+    login:"LINE", lineName:"小明", pw:false
+  };
+
+  const AGE = {
+    adult:   ["已完成年齡確認", "ok",   "已確認為滿 18 歲。"],
+    minor:   ["未成年（已取得同意）", "blue",
+              "已取得法定代理人同意。單次與每月的購買金額設有上限。"],
+    pending: ["等待法定代理人同意", "warn",
+              "在取得同意之前無法購買點數。"]
+  };
+
+  function fld(l, v, sub, go){
+    return `<div class="fld">
+      <span class="l">${l}</span>
+      <span class="v">${v}${sub ? `<small>${sub}</small>` : ""}</span>
+      ${go ? `<button class="go" data-act="${go.act}">${go.lb}</button>` : ""}
+    </div>`;
+  }
+
+  function renderProfile(){
+    const [al, ac, ad] = AGE[ME.age];
+    $("#basic").innerHTML =
+      fld("暱稱", esc(ME.nick), null, { act:"edit-nick", lb:"變更" }) +
+      fld("會員代號", `<span class="mono">${ME.id}</span>`,
+          "紀錄與客服查詢時使用的代號。") +
+      fld("註冊日", `<span class="mono">${ME.joined}</span>`) +
+      fld("等級", esc(ME.level), "依累計抽卡次數計算。");
+
+    $("#auth").innerHTML =
+      fld("登入方式", `${ME.login}（${esc(ME.lineName)}）`,
+          "使用 LINE 登入，不需要另外設定密碼。") +
+      fld("年齡確認", `<span class="pill ${ac}">${al}</span>`, ad) +
+      fld("電子郵件", `<span class="mono" id="vMail">${ME.email.mask}</span>`,
+          "接收重要通知。", { act:"show-mail", lb:"顯示" }) +
+      fld("手機號碼", `<span class="mono" id="vPhone">${ME.phone.mask}</span>`,
+          "寄送時提供給物流使用。", { act:"show-phone", lb:"顯示" });
+
+    $("#rights").innerHTML =
+      fld("查詢與複製", "下載您的個人資料", "以檔案形式提供。",
+          { act:"export", lb:"申請" }) +
+      fld("補充或更正", "修改姓名・地址・聯絡方式", null,
+          { act:"fix", lb:"申請" }) +
+      fld("停止利用", "停止將資料用於行銷", "服務本身的通知不受影響。",
+          { act:"stop", lb:"申請" }) +
+      fld("刪除", "刪除個人資料", "抽卡紀錄會以代號保留（見下方說明）。",
+          { act:"erase", lb:"申請" });
+  }
+
+  /* ── 收件地址 ─────────────────────────────────
+     申請時に住所を複製して凍結する（address_snapshot）。
+     ここを後から変えても、出荷済みの宛先は動かない */
+  const ADDRS = [
+    { id:"a_1", kind:"home", label:"住家", def:true,
+      zip:"100", city:"臺北市", dist:"中正區", line:"忠孝東路一段 12 號 5 樓",
+      name:"王小明", phone:"0912-345-123" },
+    { id:"a_2", kind:"cvs", label:"超商取貨", def:false,
+      store:"7-ELEVEN 台北中正門市", storeNo:"123456",
+      name:"王小明", phone:"0912-345-123" }
+  ];
+
+  function renderAddrs(){
+    $("#nAd").textContent = `${ADDRS.length} 筆`;
+    $("#addrs").innerHTML = ADDRS.map(a => `<div class="ad">
+      <div class="t">
+        <b>${esc(a.label)}</b>
+        ${a.def ? `<span class="pill ok">預設</span>` : ""}
+        ${a.kind === "cvs" ? `<span class="pill blue">超商</span>` : ""}
+        <button class="edit" data-act="addr-edit">編輯</button>
+      </div>
+      <div class="body">${a.kind === "cvs"
+        ? `${esc(a.store)}<br><span class="mono" style="font-size:11px">店號 ${a.storeNo}</span>`
+        : `<span class="mono">${a.zip}</span> ${esc(a.city)}${esc(a.dist)}<br>${esc(a.line)}`}</div>
+      <div class="who">${esc(a.name)} ・ <span class="mono">${a.phone}</span></div>
+      ${a.def ? "" : `<button class="set" data-act="addr-def">設為預設地址</button>`}
+    </div>`).join("");
+  }
+
+  /* ── 通知 ─────────────────────────────────
+     **行銷は既定でオフ。**同意を取ってから送る。
+     解除権の期限のように権利に関わるものは、設定に関係なくメールで送る */
+  const SVC = [
+    { k:"draw", lb:"抽卡結果",   d:"抽卡完成時通知。", on:true },
+    { k:"ship", lb:"寄送狀態",   d:"出貨與送達時通知。關閉後仍會以電子郵件通知。", on:true },
+    { k:"wdr",  lb:"解除權期限", d:"七日期限剩餘 2 天時提醒。", on:true },
+    { k:"pt",   lb:"點數異動",   d:"購買・轉換・客服調整時通知。", on:true }
+  ];
+  const MKT = [
+    { k:"new",  lb:"新卡包上架", d:"新的卡包開賣時通知。", on:false },
+    { k:"camp", lb:"活動與優惠", d:"免運或加碼活動的通知。", on:false }
+  ];
+
+  function toggles(list, id){
+    $(id).innerHTML = list.map(t => `<div class="tg">
+      <span class="tx"><b>${t.lb}</b><small>${t.d}</small></span>
+      <button class="sw${t.on ? " on" : ""}" data-tg="${t.k}"
+              role="switch" aria-checked="${t.on}" aria-label="${t.lb}"></button>
+    </div>`).join("");
+  }
+  function renderNotify(){ toggles(SVC, "#nSvc"); toggles(MKT, "#nMkt"); }
+
+  /* ── 操作 ───────────────────────────────── */
+  const MSG = {
+    "show-mail":  () => { $("#vMail").textContent  = ME.email.real; return "已顯示電子郵件"; },
+    "show-phone": () => { $("#vPhone").textContent = ME.phone.real; return "已顯示手機號碼"; },
+    "export":     () => "個人資料的下載申請（原型尚未串接）",
+    "erase":      () => "刪除申請。抽卡紀錄會以代號保留（原型尚未串接）",
+    "delete":     () => "客服聯繫（原型尚未串接）"
+  };
+
+  document.addEventListener("click", e => {
+    const sw = e.target.closest("[data-tg]");
+    if (sw) {
+      const on = !sw.classList.contains("on");
+      sw.classList.toggle("on", on);
+      sw.setAttribute("aria-checked", String(on));
+      const all = [...SVC, ...MKT].find(t => t.k === sw.dataset.tg);
+      if (all) all.on = on;
+      toast(on ? "已開啟通知" : "已關閉通知");
+      return;
+    }
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const fn = MSG[b.dataset.act];
+    toast(fn ? fn() : "此功能尚未建置（原型）");
+  });
+
+  const TITLE = { profile:"個人資料", address:"收件地址", notify:"通知設定" };
+  function show(v){
+    document.querySelectorAll(".segs button").forEach(x => x.classList.toggle("on", x.dataset.v === v));
+    document.querySelectorAll(".view").forEach(s => s.classList.remove("on"));
+    $("#v-" + v).classList.add("on");
+    $("#ttl").textContent = TITLE[v] || "帳戶設定";
+    scrollTo({ top:0 });
+  }
+  document.querySelector(".segs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (b) show(b.dataset.v);
+  });
+
+  let tid = 0;
+  function toast(msg){
+    const el = $("#toast");
+    el.textContent = msg; el.classList.add("on");
+    clearTimeout(tid); tid = setTimeout(() => el.classList.remove("on"), 2000);
+  }
+
+  renderProfile(); renderAddrs(); renderNotify();
+
+  const v0 = new URLSearchParams(location.search).get("v");
+  show(TITLE[v0] ? v0 : "profile");
+})();
+</script>
+</body></html>
