@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>我的卡片 — DOPA 台灣</title>
 </head><body>
 <style>
@@ -124,7 +124,8 @@
 
 <div id="app">
   <header class="hd">
-    <button class="back" aria-label="返回" onclick="history.back()">
+    <!-- 演出から replace で来ると履歴が無い。back が効かないので抽卡列表へ逃がす -->
+    <button class="back" aria-label="返回" id="btnBack">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -169,6 +170,11 @@
 <script>
 (() => {
   "use strict";
+
+  document.getElementById("btnBack").addEventListener("click", () => {
+    if (history.length > 1) history.back();
+    else location.href = "./app.html";
+  });
 
   const BALANCE = 1200;
 

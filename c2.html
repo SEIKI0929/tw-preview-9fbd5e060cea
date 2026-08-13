@@ -153,7 +153,9 @@
 
 <div id="app">
   <header class="hd">
-    <button class="back" aria-label="返回" onclick="history.back()">
+    <!-- 履歴が無いとき（直リンクで開かれた・演出から replace で来た）は
+         back が何も起きないので、抽卡列表へ逃がす -->
+    <button class="back" aria-label="返回" id="btnBack">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </button>
@@ -310,12 +312,21 @@
     ? `點數不足。<a href="./b1.html">前往購買點數 →</a>`
     : `抽卡即表示同意<a href="#" id="agreeLink">注意事項</a>。點數不可兌換現金。`;
 
+  $("#btnBack").addEventListener("click", () => {
+    if (history.length > 1) history.back();
+    else location.href = "./app.html";
+  });
+
   $("#buyrow").addEventListener("click", e => {
     const b = e.target.closest("button.buy"); if (!b) return;
     if (b.disabled) return;
     const n = Number(b.dataset.n);
     // 本番：POST /api/draw → 画像プリロード → GachaEffect.play(draw)
-    location.href = `./effect.html?gacha=${encodeURIComponent(GACHA.id)}&count=${n}`;
+    //
+    // **replace であって href ではない。** href だと演出ページが履歴に積まれ、
+    // 結果画面から戻ったあとに「戻る」を押すと演出が再生し直される。
+    // 本番では引き直しに見えるので、履歴に残さないこと。
+    location.replace(`./effect.html?gacha=${encodeURIComponent(GACHA.id)}&count=${n}`);
   });
 
   // disabled でも理由を伝える。押しても何も起きない画面にしない

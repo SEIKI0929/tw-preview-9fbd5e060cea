@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>ガチャ演出 10秒</title>
 </head><body>
 <style>
@@ -1038,7 +1038,9 @@
       // 本番はここで draw.results の imageUrl を先読みしてから play() を呼ぶ
       out = await play(draw);
     }
-    location.href = out.next === "holdings" ? "./cards.html" : "./c2.html";
+    // **replace であって href ではない。** 演出ページを履歴から外す。
+    // href だと [c2, effect, c2] と積まれ、戻るを押すたびに演出が再生される
+    location.replace(out.next === "holdings" ? "./cards.html" : "./c2.html");
   }
 
   // ?tier=miss|hit|big を足すと、その段で自動再生する（確認用）
